@@ -182,7 +182,7 @@ export function SuggestedFriends({ session }: { session: any }) {
             <span className="text-sm font-bold block break-all leading-tight">
               {u.username}
             </span>
-            <span className="text-xs text-zinc-500">Suggested</span>
+            <span className="text-xs  text-zinc-500">Suggested</span>
           </div>
         </div>
 
