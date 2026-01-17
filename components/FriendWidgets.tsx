@@ -164,18 +164,46 @@ export function SuggestedFriends({ session }: { session: any }) {
       setSentRequests(prev => new Set(prev).add(targetId))
     }
   
-    return (
-      <div className="rounded-3xl bg-white p-6 shadow-sm border border-zinc-100">
-        <h3 className="font-bold text-zinc-900 mb-4">People You May Know</h3>
-        {users.map((u) => (
-            <div key={u.id} className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10"><AvatarImage src={u.avatar_url} /><AvatarFallback>U</AvatarFallback></Avatar>
-                    <div><span className="text-sm font-bold block">{u.username}</span><span className="text-xs text-zinc-500">Suggested</span></div>
-                </div>
-                {sentRequests.has(u.id) ? <Button size="sm" variant="outline" disabled className="h-8 text-xs">Sent</Button> : <Button size="sm" className="h-8 bg-zinc-900 text-white" onClick={() => sendRequest(u.id)}><UserPlus className="h-3 w-3 mr-1"/>Add</Button>}
-            </div>
-        ))}
+   return (
+  <div className="rounded-3xl bg-white p-6 shadow-sm border border-zinc-100">
+    <h3 className="font-bold text-zinc-900 mb-4">People You May Know</h3>
+
+    {users.map((u) => (
+      <div key={u.id} className="flex items-center justify-between mb-4">
+        
+        {/* LEFT SIDE */}
+        <div className="flex items-center gap-3 min-w-0">
+          <Avatar className="h-10 w-10 shrink-0">
+            <AvatarImage src={u.avatar_url} />
+            <AvatarFallback>U</AvatarFallback>
+          </Avatar>
+
+          <div className="min-w-0">
+            <span className="text-sm font-bold block break-all leading-tight">
+              {u.username}
+            </span>
+            <span className="text-xs text-zinc-500">Suggested</span>
+          </div>
+        </div>
+
+        {/* BUTTON */}
+        {sentRequests.has(u.id) ? (
+          <Button size="sm" variant="outline" disabled className="h-8 text-xs shrink-0">
+            Sent
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            className="h-8 bg-zinc-900 text-white shrink-0"
+            onClick={() => sendRequest(u.id)}
+          >
+            <UserPlus className="h-3 w-3 mr-1" />
+            Add
+          </Button>
+        )}
       </div>
-    )
+    ))}
+  </div>
+)
+
 }

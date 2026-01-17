@@ -20,7 +20,9 @@ export default function LiveTrap() {
             <p className="z-10 font-medium">Camera Offline</p>
          </Card>
 
-         {/* Controls */}
+         
+
+        
          <Card className="p-6 rounded-3xl border-none shadow-sm space-y-6">
             <div>
                 <h3 className="font-bold text-xl mb-1">Go Live</h3>
@@ -41,7 +43,6 @@ export default function LiveTrap() {
          </Card>
       </div>
 
-      {/* --- THE PAYWALL TRAP (VERIFIED BADGE) --- */}
       <Dialog open={showPaywall} onOpenChange={setShowPaywall}>
         <DialogContent className="sm:max-w-md bg-white rounded-3xl border-none p-0 overflow-hidden">
             <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 text-center text-white relative">
