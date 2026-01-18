@@ -1,84 +1,74 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Image as ImageIcon, Smile, Loader2, Send, X } from 'lucide-react'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Image as ImageIcon, Video, Send, Loader2, X } from 'lucide-react'
 
 export default function CreatePost({ user_id }: { user_id: string }) {
   const [content, setContent] = useState('')
-  const [mediaFile, setMediaFile] = useState<File | null>(null)
-  const [loading, setLoading] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [file, setFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [fileType, setFileType] = useState<'image' | 'video' | null>(null)
+  const [uploading, setUploading] = useState(false)
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video') => {
+    const selectedFile = e.target.files?.[0]; if (!selectedFile) return
+    setFile(selectedFile); setFileType(type); setPreviewUrl(URL.createObjectURL(selectedFile))
+  }
+
+  const clearFile = () => { setFile(null); setPreviewUrl(null); setFileType(null) }
 
   const handlePost = async () => {
-    if (!content.trim() && !mediaFile) return
-    setLoading(true)
-
-    let mediaUrl = null
-    let mediaType = 'text'
-
-    if (mediaFile) {
-        const fileName = `${Math.random()}.${mediaFile.name.split('.').pop()}`
-        const { data } = await supabase.storage.from('uploads').upload(fileName, mediaFile)
-        if (data) {
-            const { data: publicUrl } = supabase.storage.from('uploads').getPublicUrl(fileName)
-            mediaUrl = publicUrl.publicUrl
-            mediaType = mediaFile.type.startsWith('video') ? 'video' : 'image'
-        }
+    if (!content.trim() && !file) return
+    setUploading(true)
+    let mediaUrl = null; let mediaType = null
+    if (file) {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `posts/${Date.now()}.${fileExt}`
+      const { error: uploadError } = await supabase.storage.from('uploads').upload(fileName, file)
+      if (uploadError) { alert("Upload failed"); setUploading(false); return }
+      const { data } = supabase.storage.from('uploads').getPublicUrl(fileName)
+      mediaUrl = data.publicUrl; mediaType = fileType
     }
-
-    await supabase.from('posts').insert({ 
-        user_id, 
-        content,
-        media_url: mediaUrl,
-        media_type: mediaType
-    })
-
-    setContent('') 
-    setMediaFile(null)
-    setLoading(false)
-    // No reload! The Feed will detect the insert.
+    const { error } = await supabase.from('posts').insert({ user_id, content, media_url: mediaUrl, media_type: mediaType })
+    if (!error) { setContent(''); clearFile() } else { alert("Post failed") }
+    setUploading(false)
   }
 
   return (
-    <div className="bg-white rounded-3xl shadow-sm border border-zinc-100 p-5 mb-6">
+    <Card className="p-5 rounded-3xl border border-zinc-100 shadow-sm bg-white mb-6">
       <div className="flex gap-4">
-        <Avatar className="h-10 w-10 mt-1"><AvatarFallback className="bg-indigo-100 text-indigo-700 font-bold">ME</AvatarFallback></Avatar>
-        <div className="flex-1">
-            <textarea 
-                className="w-full bg-zinc-50 rounded-xl p-3 min-h-[80px] text-zinc-700 placeholder:text-zinc-400 focus:outline-none resize-none text-sm"
-                placeholder="What's on your mind?"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
+        <Avatar className="h-11 w-11 ring-2 ring-zinc-50"><AvatarFallback className="bg-zinc-100 text-zinc-400">Me</AvatarFallback></Avatar>
+        <div className="flex-1 space-y-4">
+            <textarea
+                className="w-full bg-transparent border-none resize-none focus:ring-0 text-lg placeholder:text-zinc-400 text-zinc-800"
+                placeholder="What's golden today?"
+                rows={2} value={content} onChange={(e) => setContent(e.target.value)}
             />
-            
-            {mediaFile && (
-                <div className="relative mt-2 rounded-xl overflow-hidden bg-black max-h-60">
-                    <button onClick={() => setMediaFile(null)} className="absolute top-2 right-2 bg-black/50 p-1 rounded-full text-white hover:bg-black"><X className="w-4 h-4"/></button>
-                    {mediaFile.type.startsWith('video') ? (
-                        <video src={URL.createObjectURL(mediaFile)} className="w-full h-full object-contain" controls />
-                    ) : (
-                        <img src={URL.createObjectURL(mediaFile)} className="w-full h-full object-contain" />
-                    )}
+            {previewUrl && (
+                <div className="relative rounded-2xl overflow-hidden bg-zinc-100 border border-zinc-200">
+                    <Button size="icon" variant="secondary" className="absolute top-2 right-2 rounded-full h-8 w-8 z-10 bg-black/50 hover:bg-black/70 text-white" onClick={clearFile}><X className="h-4 w-4" /></Button>
+                    {fileType === 'video' ? <video src={previewUrl} controls className="w-full max-h-[400px] object-cover" /> : <img src={previewUrl} className="w-full max-h-[400px] object-cover" />}
                 </div>
             )}
-            
-            <div className="flex items-center justify-between mt-3">
+            <div className="flex items-center justify-between border-t border-zinc-50 pt-3">
                 <div className="flex gap-2">
-                    <input type="file" ref={fileInputRef} hidden accept="image/*,video/*" onChange={(e) => setMediaFile(e.target.files?.[0] || null)} />
-                    <button onClick={() => fileInputRef.current?.click()} className="p-2 rounded-full hover:bg-zinc-100 text-zinc-400 hover:text-indigo-500 transition-colors">
-                        <ImageIcon className="h-5 w-5" />
-                    </button>
-                    <button onClick={() => setContent(prev => prev + " 😊")} className="p-2 rounded-full hover:bg-zinc-100 text-zinc-400 hover:text-yellow-500 transition-colors">
-                        <Smile className="h-5 w-5" />
-                    </button>
+                    <div className="relative">
+                        <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileSelect(e, 'image')} />
+                        <Button variant="ghost" size="sm" className="text-zinc-500 hover:text-yellow-600 hover:bg-yellow-50 rounded-full font-medium"><ImageIcon className="h-5 w-5 mr-2" /> Photo</Button>
+                    </div>
+                    <div className="relative">
+                        <input type="file" accept="video/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileSelect(e, 'video')} />
+                        <Button variant="ghost" size="sm" className="text-zinc-500 hover:text-yellow-600 hover:bg-yellow-50 rounded-full font-medium"><Video className="h-5 w-5 mr-2" /> Video</Button>
+                    </div>
                 </div>
-                <Button onClick={handlePost} disabled={loading || (!content && !mediaFile)} className="rounded-full bg-indigo-600 hover:bg-indigo-700 px-6">
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <span className="flex items-center gap-2">Post <Send className="h-3 w-3" /></span>}
+                <Button onClick={handlePost} disabled={uploading || (!content && !file)} className="rounded-full bg-yellow-400 hover:bg-yellow-500 text-black px-6 font-bold shadow-md shadow-yellow-200">
+                    {uploading ? <Loader2 className="animate-spin" /> : <Send className="h-4 w-4" />}
                 </Button>
             </div>
         </div>
       </div>
-    </div>
+    </Card>
   )
 }
