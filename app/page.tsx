@@ -8,7 +8,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
-
+import SuiteHub from '@/components/SuiteHub'
+import TvPassThrough from '@/components/TvPassThrough'
+import { Tv, Grid } from "lucide-react" // Import icons
 // --- COMPONENT IMPORTS ---
 import AuthPage from '@/components/AuthPage'
 import CreatePost from '@/components/CreatePost'
@@ -36,6 +38,7 @@ import {
   Trash2
 } from "lucide-react"
 import ReactionDock from '@/components/ReactionDock'
+import TvEmbed from '@/components/TvEmbed'
 
 // --- BACKGROUND ART COMPONENT (NEW) ---
 function BackgroundArt() {
@@ -628,6 +631,8 @@ export default function Page() {
                     <TabsTrigger value="live">Live</TabsTrigger>
                     <TabsTrigger value="events">Events</TabsTrigger>
                     <TabsTrigger value="mall">Mall</TabsTrigger>
+                    <TabsTrigger value="suite">Hub</TabsTrigger>
+<TabsTrigger value="tv">TV</TabsTrigger>
                   </TabsList>
               )}
 
@@ -638,7 +643,9 @@ export default function Page() {
               <TabsContent value="events"><EventsFeed user={session.user} /></TabsContent>
               <TabsContent value="mall"><MallFeed session={session} onChat={openPrivateChat} globalSearch={globalSearch} /></TabsContent>
               <TabsContent value="chat"><ChatDashboard session={session} onCall={startCall} /></TabsContent>
-            </Tabs>
+             <TabsContent value="suite"><SuiteHub session ={session} /></TabsContent>
+             <TabsContent value="tv">      <TvEmbed /></TabsContent>
+    </Tabs>
           </main>
 
           {/* RIGHT SIDEBAR (Hidden if Chat) */}

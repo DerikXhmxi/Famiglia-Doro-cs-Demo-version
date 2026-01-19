@@ -80,7 +80,16 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 }
+/* Prevent text selection and image dragging */
+.no-capture {
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
+  -webkit-touch-callout: none;
+}
 
+/* Optional: Blur content if window loses focus (extreme measure) */
+/* .blur-on-inactive:not(:hover) { filter: blur(5px); } */
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
