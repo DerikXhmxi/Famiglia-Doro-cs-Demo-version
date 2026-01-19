@@ -22,8 +22,9 @@ import EventsFeed from '@/components/EventsFeed'
 import MallFeed from '@/components/Mallfeed'
 import LiveDashboard from '@/components/LiveDashboard'
 import CallOverlay from '@/components/CallOverlay'
-import SettingsPanel from '@/components/SettingsPanel' // <--- IMPORT NEW COMPONENT
+import SettingsPanel from '@/components/SettingsPanel'
 import { IncomingRequests, SidebarChatWidget, SuggestedFriends } from '@/components/FriendWidgets'
+import ChatDashboard from '@/components/ChatDashboard'
 
 import {
   Home, Users, Zap, Calendar, ShoppingBag,
@@ -31,9 +32,32 @@ import {
   Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Film, 
   MapPin, User, Globe, Hash, Lock, Send, Image as ImageIcon, 
   Loader2, MoreVertical, Phone, Video, CheckCircle2, ArrowRight, 
-  ChevronLeft, Camera, Upload, Facebook, Check, X
+  ChevronLeft, Camera, Upload, Facebook, Check, X,
+  Trash2
 } from "lucide-react"
-import ChatDashboard from '@/components/ChatDashboard'
+import ReactionDock from '@/components/ReactionDock'
+
+// --- BACKGROUND ART COMPONENT (NEW) ---
+function BackgroundArt() {
+    return (
+        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+            {/* Top Right Gold Orb */}
+            <div className="absolute -top-[10%] -right-[5%] w-[600px] h-[600px] bg-yellow-400/40 rounded-full blur-[100px] mix-blend-multiply animate-pulse-slow" />
+            
+            {/* Bottom Left Warm Glow */}
+            <div className="absolute -bottom-[10%] -left-[5%] w-[500px] h-[500px] bg-yellow-400/70 rounded-full blur-[120px] mix-blend-multiply" />
+            
+            {/* Center Geometric Shape (Subtle Polygon) */}
+            <svg className="absolute top-1/3 left-1/4 w-[800px] h-[800px] text-yellow-500/5 animate-spin-slower" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <path fill="currentColor" d="M44.7,-76.4C58.9,-69.2,71.8,-59.1,81.6,-46.6C91.4,-34.1,98.1,-19.2,95.8,-5.1C93.5,9,82.2,22.3,71.2,33.5C60.2,44.7,49.5,53.8,37.8,61.8C26.1,69.8,13.4,76.7,0.3,76.2C-12.8,75.7,-25.3,67.8,-36.4,59.3C-47.5,50.8,-57.2,41.7,-65.3,30.8C-73.4,19.9,-79.9,7.2,-80.6,-5.9C-81.3,-19,-76.2,-32.5,-67.2,-43.3C-58.2,-54.1,-45.3,-62.2,-32.1,-69.9C-18.9,-77.6,-5.4,-84.9,4.4,-92.5L14.2,-100.1" transform="translate(100 100)" />
+            </svg>
+            
+            {/* Floating Small Circles */}
+            <div className="absolute top-[20%] left-[10%] w-24 h-24 border-4 border-yellow-200/80 rounded-full" />
+            <div className="absolute bottom-[30%] right-[15%] w-16 h-16 bg-yellow-300/20 rounded-full blur-xl" />
+        </div>
+    )
+}
 
 // --- LOGO COMPONENT ---
 function AppLogo({ size = "md" }: { size?: "sm" | "md" | "lg" | "xl" }) {
@@ -81,13 +105,22 @@ function ProfileReminder({ onComplete, onSkip }: { onComplete: () => void, onSki
 }
 
 // --- PROFILE SETUP WIZARD ---
+// --- PROFILE SETUP WIZARD (Fixed Type Error) ---
 function ProfileSetup({ session, onComplete, onSkip }: { session: any, onComplete: () => void, onSkip?: () => void }) {
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
+    
+    // FIX: Ensure avatarFile is strictly File | null. Do not put a string URL here.
     const [formData, setFormData] = useState({
-        firstName: '', lastName: '', bio: '', age: '', gender: '',
-        goals: [] as string[], profession: '', acceptedTos: false,
-        avatarFile: null as File | null
+        firstName: '', 
+        lastName: '', 
+        bio: '', 
+        age: '', 
+        gender: '',
+        goals: [] as string[], 
+        profession: '', 
+        acceptedTos: false,
+        avatarFile: null as File | null 
     })
 
     const goalsList = ["Enhance my Skills", "Join a Club", "Pursuit a Career/Skill", "Start a Business", "Promote My Brand", "Network"]
@@ -101,20 +134,44 @@ function ProfileSetup({ session, onComplete, onSkip }: { session: any, onComplet
         setLoading(true)
         try {
             let avatarUrl = session.user.user_metadata.avatar_url
+            
+            // Only upload if a NEW file was selected
             if (formData.avatarFile) {
                 const fileName = `avatars/${session.user.id}_${Date.now()}`
                 await supabase.storage.from('uploads').upload(fileName, formData.avatarFile)
                 const { data } = supabase.storage.from('uploads').getPublicUrl(fileName)
                 avatarUrl = data.publicUrl
             }
+
             await supabase.from('profiles').update({
-                first_name: formData.firstName, last_name: formData.lastName, bio: formData.bio,
-                age: parseInt(formData.age), gender: formData.gender, goals: formData.goals,
-                profession: formData.profession, accepted_tos: true, is_onboarded: true,
+                first_name: formData.firstName, 
+                last_name: formData.lastName, 
+                bio: formData.bio,
+                age: parseInt(formData.age), 
+                gender: formData.gender, 
+                goals: formData.goals,
+                profession: formData.profession, 
+                accepted_tos: true, 
+                is_onboarded: true,
                 avatar_url: avatarUrl
             }).eq('id', session.user.id)
+            
             setTimeout(() => { setLoading(false); onComplete() }, 2000)
-        } catch (error) { console.error(error); alert("Error saving profile"); setLoading(false) }
+        } catch (error) { 
+            console.error(error); 
+            alert("Error saving profile"); 
+            setLoading(false) 
+        }
+    }
+
+    // Helper to determine which image to show
+    const getDisplayImage = () => {
+        if (formData.avatarFile) {
+            // If user picked a new file, show preview
+            return URL.createObjectURL(formData.avatarFile)
+        }
+        // Otherwise show existing avatar from session, or null
+        return session.user.user_metadata.avatar_url || null
     }
 
     useEffect(() => {
@@ -136,7 +193,40 @@ function ProfileSetup({ session, onComplete, onSkip }: { session: any, onComplet
                     {step === 4 && (<div className="space-y-6 animate-in slide-in-from-right duration-300"><h2 className="text-xl font-bold text-center leading-tight">What you need <br/> Famiglia Doro TV <br/> Creator Suite for</h2><div className="space-y-3">{goalsList.map((goal) => (<button key={goal} onClick={() => toggleGoal(goal)} className={`w-full py-4 rounded-xl font-medium text-sm transition-all ${formData.goals.includes(goal) ? 'bg-zinc-800 text-white shadow-lg' : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200'}`}>{goal}</button>))}</div></div>)}
                     {step === 5 && (<div className="space-y-6 animate-in slide-in-from-right duration-300"><h2 className="text-xl font-bold text-center">Profession / Pursuit / Clubs</h2><div className="space-y-2 h-[400px] overflow-y-auto pr-2 custom-scrollbar">{professionList.map((prof) => (<button key={prof} onClick={() => setFormData({...formData, profession: prof})} className={`w-full py-3.5 rounded-xl font-medium text-sm transition-all ${formData.profession === prof ? 'bg-zinc-800 text-white shadow-lg' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'}`}>{prof}</button>))}</div></div>)}
                     {step === 6 && (<div className="space-y-4 animate-in slide-in-from-right duration-300 flex flex-col h-full"><h2 className="text-xl font-bold text-center">Terms of Service</h2><div className="bg-zinc-50 p-4 rounded-xl text-xs text-zinc-500 leading-relaxed flex-1 overflow-y-auto border border-zinc-100 text-justify"><p className="mb-2"><strong>Famiglia Doro Creator Suite TERMS AND CONDITIONS</strong></p><p>Your access to and use of the Service is conditioned on Your acceptance of and compliance with these Terms and Conditions...</p></div><div className="flex items-center space-x-2 pt-2"><Checkbox id="terms" checked={formData.acceptedTos} onCheckedChange={(c) => setFormData({...formData, acceptedTos: c as boolean})} /><label htmlFor="terms" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">I accept the terms and conditions</label></div></div>)}
-                    {step === 7 && (<div className="space-y-8 animate-in slide-in-from-right duration-300 flex flex-col items-center"><div className="relative"><div className="w-32 h-32 rounded-full bg-zinc-100 border-4 border-yellow-400 overflow-hidden flex items-center justify-center">{formData.avatarFile ? (<img src={URL.createObjectURL(formData.avatarFile)} className="w-full h-full object-cover" />) : (<User className="w-12 h-12 text-zinc-300" />)}</div><div className="absolute bottom-0 right-0 bg-zinc-900 p-2 rounded-full text-white cursor-pointer"><Camera className="w-4 h-4"/></div></div><h2 className="text-2xl font-bold text-center">Add your photo</h2><div className="w-full space-y-3"><div className="relative"><input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={(e) => setFormData({...formData, avatarFile: e.target.files?.[0] || null})} /><Button className="w-full h-12 bg-zinc-900 hover:bg-black text-white rounded-xl"><Camera className="w-4 h-4 mr-2"/> Upload Photo</Button></div><Button variant="outline" className="w-full h-12 rounded-xl"><Facebook className="w-4 h-4 mr-2 text-blue-600"/> Import from Facebook</Button></div></div>)}
+                    
+                    {/* STEP 7: IMAGE UPLOAD (FIXED) */}
+                    {step === 7 && (
+                        <div className="space-y-8 animate-in slide-in-from-right duration-300 flex flex-col items-center">
+                            <div className="relative">
+                                <div className="w-32 h-32 rounded-full bg-zinc-100 border-4 border-yellow-400 overflow-hidden flex items-center justify-center">
+                                    {getDisplayImage() ? (
+                                        <img src={getDisplayImage()} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <User className="w-12 h-12 text-zinc-300" />
+                                    )}
+                                </div>
+                                <div className="absolute bottom-0 right-0 bg-zinc-900 p-2 rounded-full text-white cursor-pointer"><Camera className="w-4 h-4"/></div>
+                            </div>
+                            <h2 className="text-2xl font-bold text-center">Add your photo</h2>
+                            <div className="w-full space-y-3">
+                                <div className="relative">
+                                    <input 
+                                        type="file" 
+                                        accept="image/*" 
+                                        className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                                        onChange={(e) => setFormData({...formData, avatarFile: e.target.files?.[0] || null})} 
+                                    />
+                                    <Button className="w-full h-12 bg-zinc-900 hover:bg-black text-white rounded-xl">
+                                        <Camera className="w-4 h-4 mr-2"/> Upload Photo
+                                    </Button>
+                                </div>
+                                <Button variant="outline" className="w-full h-12 rounded-xl">
+                                    <Facebook className="w-4 h-4 mr-2 text-blue-600"/> Import from Facebook
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
                     {step === 8 && (<div className="flex flex-col items-center justify-center h-full animate-in zoom-in duration-500"><div className="relative w-40 h-40 flex items-center justify-center"><div className="absolute inset-0 border-4 border-zinc-100 rounded-full"></div><div className="absolute inset-0 border-4 border-yellow-400 rounded-full border-t-transparent animate-spin"></div><img src={session.user.user_metadata.avatar_url} className="w-20 h-20 rounded-full opacity-50" /></div><h2 className="text-4xl font-black mt-8">50%</h2><p className="text-zinc-500 font-medium">Creating Profile...</p></div>)}
                 </div>
                 {step < 8 && (<div className="p-6 bg-white border-t border-zinc-50"><Button onClick={step === 7 ? () => setStep(8) : handleNext} disabled={(step === 1 && (!formData.firstName || !formData.lastName)) || (step === 2 && !formData.age) || (step === 6 && !formData.acceptedTos)} className="w-full h-14 bg-yellow-400 hover:bg-yellow-500 text-zinc-900 font-bold rounded-2xl text-lg shadow-lg shadow-yellow-200/50">{step === 7 ? "Complete Profile" : "Continue"}</Button>{step === 7 && <button onClick={() => setStep(8)} className="w-full text-center text-zinc-400 text-xs mt-3 hover:text-zinc-600">Skip for now</button>}</div>)}
@@ -177,39 +267,109 @@ function IntroSequence({ onComplete }: { onComplete: () => void }) {
 }
 
 // --- VIDEO PLAYER HELPER ---
+
+
+// ADD THIS ABOVE YOUR RealPostsFeed FUNCTION
 function CustomVideoPlayer({ src }: { src: string }) {
     const videoRef = useRef<HTMLVideoElement>(null)
     const [isPlaying, setIsPlaying] = useState(false)
     const [isMuted, setIsMuted] = useState(true)
-    const togglePlay = () => { if (!videoRef.current) return; if (isPlaying) { videoRef.current.pause(); setIsPlaying(false) } else { videoRef.current.play(); setIsPlaying(true) } }
+
+    const togglePlay = () => { 
+        if (!videoRef.current) return; 
+        if (isPlaying) { 
+            videoRef.current.pause(); 
+            setIsPlaying(false) 
+        } else { 
+            videoRef.current.play(); 
+            setIsPlaying(true) 
+        } 
+    }
+
     return (
         <div className="relative w-full flex justify-center bg-black cursor-pointer group" onClick={togglePlay}>
             <video ref={videoRef} src={src} className="max-h-[500px] w-full object-contain" loop playsInline muted={isMuted} />
-            {!isPlaying && <div className="absolute inset-0 flex items-center justify-center bg-black/20"><div className="p-4 bg-white/20 backdrop-blur-md rounded-full text-white"><Play className="w-8 h-8 fill-current" /></div></div>}
-            <button onClick={(e) => { e.stopPropagation(); if(videoRef.current){ videoRef.current.muted = !isMuted; setIsMuted(!isMuted) }}} className="absolute bottom-4 right-4 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition">{isMuted ? <VolumeX className="w-5 h-5"/> : <Volume2 className="w-5 h-5"/>}</button>
+            {!isPlaying && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <div className="p-4 bg-white/20 backdrop-blur-md rounded-full text-white">
+                        <Play className="w-8 h-8 fill-current" />
+                    </div>
+                </div>
+            )}
+            <button 
+                onClick={(e) => { 
+                    e.stopPropagation(); 
+                    if(videoRef.current){ 
+                        videoRef.current.muted = !isMuted; 
+                        setIsMuted(!isMuted) 
+                    }
+                }} 
+                className="absolute bottom-4 right-4 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition"
+            >
+                {isMuted ? <VolumeX className="w-5 h-5"/> : <Volume2 className="w-5 h-5"/>}
+            </button>
         </div>
     )
 }
-
 // --- REAL POSTS FEED ---
+// --- REAL POSTS FEED (With Delete & Time Ago) ---
+// ADD this inside your Page.tsx or wherever RealPostsFeed is defined
+
+// Inside src/app/page.tsx
+
+// Inside src/app/page.tsx
+
 function RealPostsFeed({ session }: { session: any }) {
   const [posts, setPosts] = useState<any[]>([])
   const [expandedPostId, setExpandedPostId] = useState<number | null>(null)
   const [comments, setComments] = useState<any[]>([])
   const [commentText, setCommentText] = useState('')
 
+  const formatTimeAgo = (date: string) => {
+      const d = new Date(date); const now = new Date();
+      const diff = (now.getTime() - d.getTime()) / 1000;
+      if (diff < 60) return 'Just now';
+      if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+      if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+      return d.toLocaleDateString();
+  }
+
+  const handleShare = async (post: any) => {
+    const url = `${window.location.origin}/post/${post.id}`
+    if (navigator.share) {
+        try { await navigator.share({ title: `Post by ${post.profiles?.username}`, url }) } catch (e) { console.log('Share canceled') }
+    } else {
+        navigator.clipboard.writeText(url)
+        alert("Link copied to clipboard!")
+    }
+  }
+
+  // --- NEW: Handle Reaction Save ---
+  const handleReaction = async (emoji: string, postId: number) => {
+      // Optimistic UI: The animation plays in ReactionDock, we just save to DB here
+      const { error } = await supabase.from('post_reactions').insert({
+          post_id: postId,
+          user_id: session.user.id,
+          emoji: emoji
+      })
+      if (error) console.error('Error reacting:', error)
+  }
+
   useEffect(() => {
     fetchPosts()
-    const channel = supabase.channel('posts_feed').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, async (payload) => {
-        const { data } = await supabase.from('posts').select(`*, profiles(username, avatar_url), post_likes(user_id), post_comments(count)`).eq('id', payload.new.id).single()
-        if (data) setPosts(prev => [{ ...data, isLiked: false, likeCount: 0, commentCount: 0 }, ...prev])
-    }).subscribe()
+    const channel = supabase.channel('posts_feed').on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => fetchPosts()).subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [])
 
   async function fetchPosts() {
     const { data } = await supabase.from('posts').select(`*, profiles(username, avatar_url), post_likes(user_id), post_comments(count)`).order('created_at', { ascending: false })
     if (data) setPosts(data.map(p => ({ ...p, isLiked: p.post_likes.some((l: any) => l.user_id === session.user.id), likeCount: p.post_likes.length, commentCount: p.post_comments[0].count })))
+  }
+
+  const handleDeletePost = async (postId: number) => {
+      if(!confirm("Are you sure you want to delete this post?")) return
+      const { error } = await supabase.from('posts').delete().eq('id', postId)
+      if (!error) setPosts(prev => prev.filter(p => p.id !== postId))
   }
 
   const handleLike = async (post: any) => {
@@ -238,18 +398,40 @@ function RealPostsFeed({ session }: { session: any }) {
   return (
     <div className="space-y-6">
       {posts.map((post) => (
-        <div key={post.id} className="bg-white rounded-3xl shadow-sm border border-zinc-100 overflow-hidden">
-          <div className="flex items-center gap-3 p-5"><Avatar><AvatarImage src={post.profiles?.avatar_url}/><AvatarFallback>U</AvatarFallback></Avatar><div><span className="font-bold text-sm block">{post.profiles?.username}</span><span className="text-xs text-zinc-400">{new Date(post.created_at).toLocaleDateString()}</span></div></div>
+        <div key={post.id} className="bg-white rounded-3xl shadow-sm border border-zinc-100 overflow-hidden relative group">
+          <div className="flex items-center gap-3 p-5">
+              <Avatar><AvatarImage src={post.profiles?.avatar_url}/><AvatarFallback>U</AvatarFallback></Avatar>
+              <div><span className="font-bold text-sm block">{post.profiles?.username}</span><span className="text-xs text-zinc-400 flex items-center gap-1">{formatTimeAgo(post.created_at)}</span></div>
+              {session.user.id === post.user_id && <button onClick={() => handleDeletePost(post.id)} className="absolute top-5 right-5 text-zinc-300 hover:text-red-500 transition-colors p-2"><Trash2 className="w-4 h-4"/></button>}
+          </div>
           <div className="px-5 pb-3"><p className="text-zinc-700">{post.content}</p></div>
           {post.media_url && <div className="w-full bg-black flex justify-center">{post.media_type === 'video' ? <CustomVideoPlayer src={post.media_url} /> : <img src={post.media_url} className="max-h-[500px] object-contain" />}</div>}
-          <div className="px-5 py-4 border-t border-zinc-50 flex justify-between"><div className="flex gap-4"><button onClick={() => handleLike(post)} className={`flex items-center gap-2 text-sm font-medium ${post.isLiked ? 'text-red-500' : 'text-zinc-500'}`}><Heart className={`h-5 w-5 ${post.isLiked ? 'fill-current' : ''}`} /> {post.likeCount}</button><button onClick={() => toggleComments(post.id)} className="flex items-center gap-2 text-zinc-500 text-sm font-medium"><MessageCircle className="h-5 w-5" /> {post.commentCount}</button></div><Share2 className="h-5 w-5 text-zinc-400"/></div>
-          {expandedPostId === post.id && <div className="bg-zinc-50 p-4 border-t border-zinc-100"><div className="space-y-3 mb-4 max-h-60 overflow-y-auto">{comments.map(c => <div key={c.id} className="flex gap-2"><Avatar className="h-6 w-6"><AvatarImage src={c.profiles?.avatar_url}/></Avatar><div className="bg-white p-2 rounded-xl text-xs shadow-sm"><span className="font-bold mr-1">{c.profiles?.username}</span>{c.content}</div></div>)}</div><div className="flex gap-2"><input className="flex-1 bg-white border border-zinc-200 rounded-full px-4 py-2 text-sm" placeholder="Write a comment..." value={commentText} onChange={e => setCommentText(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleComment(post)} /><Button size="sm" onClick={() => handleComment(post)} className="rounded-full bg-zinc-900 text-white hover:bg-black">Post</Button></div></div>}
+          
+          {/* REACTION DOCK - SAVES TO DB */}
+          <div className="px-4 pb-2">
+              <ReactionDock onReact={(emoji) => handleReaction(emoji, post.id)} variant="inline" />
+          </div>
+
+          <div className="px-5 py-4 border-t border-zinc-50 flex justify-between">
+              <div className="flex gap-4">
+                  <button onClick={() => handleLike(post)} className={`flex items-center gap-2 text-sm font-medium ${post.isLiked ? 'text-red-500' : 'text-zinc-500'}`}><Heart className={`h-5 w-5 ${post.isLiked ? 'fill-current' : ''}`} /> {post.likeCount}</button>
+                  <button onClick={() => toggleComments(post.id)} className="flex items-center gap-2 text-zinc-500 text-sm font-medium"><MessageCircle className="h-5 w-5" /> {post.commentCount}</button>
+              </div>
+              <button onClick={() => handleShare(post)} className="text-zinc-400 hover:text-zinc-600 transition-colors"><Share2 className="h-5 w-5" /></button>
+          </div>
+          {expandedPostId === post.id && (
+              <div className="bg-zinc-50 p-4 border-t border-zinc-100">
+                  <div className="space-y-3 mb-4 max-h-60 overflow-y-auto">
+                      {comments.map(c => (<div key={c.id} className="flex gap-2"><Avatar className="h-6 w-6"><AvatarImage src={c.profiles?.avatar_url}/></Avatar><div className="bg-white p-2 rounded-xl text-xs shadow-sm"><span className="font-bold mr-1">{c.profiles?.username}</span>{c.content}</div></div>))}
+                  </div>
+                  <div className="flex gap-2"><input className="flex-1 bg-white border border-zinc-200 rounded-full px-4 py-2 text-sm" placeholder="Write a comment..." value={commentText} onChange={e => setCommentText(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleComment(post)} /><Button size="sm" onClick={() => handleComment(post)} className="rounded-full bg-zinc-900 text-white hover:bg-black">Post</Button></div>
+              </div>
+          )}
         </div>
       ))}
     </div>
   )
 }
-
 // --- MAIN PAGE COMPONENT ---
 export default function Page() {
   const [session, setSession] = useState<any>(null)
@@ -273,6 +455,14 @@ export default function Page() {
   
   const [activeCall, setActiveCall] = useState<any>(null)
   const [incomingCall, setIncomingCall] = useState<any>(null)
+
+  const refreshSession = async () => {
+      // Force refresh of the session from Supabase
+      const { data } = await supabase.auth.refreshSession()
+      if (data.session) {
+          setSession(data.session) // Now it can find 'setSession'
+      }
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => { 
@@ -369,6 +559,9 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-zinc-50/50 text-zinc-900 font-sans selection:bg-yellow-100 relative">
       
+      {/* BACKGROUND ART (Fixed Layer) */}
+      <BackgroundArt />
+
       {showReminder && <ProfileReminder onComplete={() => { setShowReminder(false); setShowProfileSetup(true) }} onSkip={() => setShowReminder(false)} />}
       
       {/* SETTINGS PANEL OVERLAY */}
@@ -408,7 +601,7 @@ export default function Page() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
           
           <aside className="hidden lg:block lg:col-span-3">
@@ -444,15 +637,7 @@ export default function Page() {
               <TabsContent value="live"><LiveDashboard session={session} /></TabsContent>
               <TabsContent value="events"><EventsFeed user={session.user} /></TabsContent>
               <TabsContent value="mall"><MallFeed session={session} onChat={openPrivateChat} globalSearch={globalSearch} /></TabsContent>
-              {/* Note: ChatDashboard from previous turn isn't needed here if we use ChatSheet for everything, BUT user asked for 'Messages' tab. */}
-              {/* If you want the full-screen chat dashboard, import it. For now, I'll use a placeholder or the ChatSheet logic if preferred. */}
-              {/* To keep it simple and unified, I will assume ChatDashboard was integrated or we re-use ChatSheet as a full page. */}
-              {/* For this specific 'complete file' request, I'll stick to the ChatSheet being the main chat interface triggered by side nav 'Messages' which toggles the sheet, or... */}
-              {/* ACTUALLY: The previous turn had a specific <ChatDashboard /> component for the 'chat' tab. I'll include it below for completeness. */}
-            <TabsContent value="chat">
-    <ChatDashboard session={session} onCall={startCall} />
-</TabsContent>
-              <TabsContent value="chat"><div className="h-[80vh] flex items-center justify-center bg-white rounded-3xl border border-zinc-100 text-zinc-400">Select a conversation from the sidebar or click Chat on a profile.</div></TabsContent>
+              <TabsContent value="chat"><ChatDashboard session={session} onCall={startCall} /></TabsContent>
             </Tabs>
           </main>
 
@@ -469,11 +654,25 @@ export default function Page() {
       </div>
 
       <ChatSheet isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} session={session} receiver={chatReceiver} group={chatGroup} onCall={startCall} />
-      <ProfileSheet isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} session={session} />
-    </div>
+<ProfileSheet 
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)} 
+        session={session}
+        onProfileUpdate={refreshSession}  // <--- ADD THIS PROP
+    />    </div>
   )
+
+  
 }
 
 function NavItem({ icon, label, active = false, onClick }: { icon: any, label: string, active?: boolean, onClick: () => void }) {
   return <button onClick={onClick} className={`flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-medium transition-all duration-200 ${active ? 'bg-zinc-900 text-yellow-400 shadow-lg shadow-zinc-300' : 'text-zinc-600 hover:bg-white hover:text-yellow-600 hover:shadow-sm'}`}><div className={`h-5 w-5 ${active ? 'text-yellow-400' : 'text-zinc-400'}`}>{icon}</div>{label}</button>
 }
+
+// const refreshSession = async () => {
+//       // Force refresh of the session from Supabase
+//       const { data } = await supabase.auth.refreshSession()
+//       if (data.session) {
+//           setSession(data.session)
+//       }
+//   }

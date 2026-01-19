@@ -145,13 +145,13 @@ export default function EventsFeed({ user }: { user: any }) {
             />
         )}
 
-        <div className="flex justify-between items-center bg-white p-4 rounded-3xl shadow-sm border border-zinc-100">
-            <h2 className="font-bold text-lg flex items-center gap-2 text-zinc-900">
-                <Calendar className="text-orange-600 w-5 h-5"/> Upcoming Events
+        <div className="flex justify-between items-center bg-black p-4 rounded-3xl shadow-sm border border-zinc-100">
+            <h2 className="font-bold text-lg flex items-center gap-2 text-white">
+                <Calendar className="text-yellow-600 w-5 h-5"/> Upcoming Events
             </h2>
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                 <DialogTrigger asChild>
-                    <Button className="rounded-full bg-orange-600 hover:bg-orange-700 text-white font-bold transition-all shadow-md">
+                    <Button className="rounded-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold transition-all shadow-md">
                         <Plus className="w-4 h-4 mr-2"/> Host Event
                     </Button>
                 </DialogTrigger>
