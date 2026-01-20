@@ -1,11 +1,15 @@
+"use client"
+
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Image as ImageIcon, Video, Send, Loader2, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next' // <--- IMPORT
 
 export default function CreatePost({ user_id }: { user_id: string }) {
+  const { t } = useTranslation(); // <--- HOOK
   const [content, setContent] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -43,7 +47,7 @@ export default function CreatePost({ user_id }: { user_id: string }) {
         <div className="flex-1 space-y-4">
             <textarea
                 className="w-full bg-transparent border-none resize-none focus:ring-0 text-lg placeholder:text-zinc-400 text-zinc-800"
-                placeholder="What's golden today?"
+                placeholder={t('cp_placeholder')} // <--- TRANSLATED
                 rows={2} value={content} onChange={(e) => setContent(e.target.value)}
             />
             {previewUrl && (
@@ -56,11 +60,11 @@ export default function CreatePost({ user_id }: { user_id: string }) {
                 <div className="flex gap-2">
                     <div className="relative">
                         <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileSelect(e, 'image')} />
-                        <Button variant="ghost" size="sm" className="text-zinc-500 hover:text-yellow-600 hover:bg-yellow-50 rounded-full font-medium"><ImageIcon className="h-5 w-5 mr-2" /> Photo</Button>
+                        <Button variant="ghost" size="sm" className="text-zinc-500 hover:text-yellow-600 hover:bg-yellow-50 rounded-full font-medium"><ImageIcon className="h-5 w-5 mr-2" /> {t('cp_photo')}</Button>
                     </div>
                     <div className="relative">
                         <input type="file" accept="video/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileSelect(e, 'video')} />
-                        <Button variant="ghost" size="sm" className="text-zinc-500 hover:text-yellow-600 hover:bg-yellow-50 rounded-full font-medium"><Video className="h-5 w-5 mr-2" /> Video</Button>
+                        <Button variant="ghost" size="sm" className="text-zinc-500 hover:text-yellow-600 hover:bg-yellow-50 rounded-full font-medium"><Video className="h-5 w-5 mr-2" /> {t('cp_video')}</Button>
                     </div>
                 </div>
                 <Button onClick={handlePost} disabled={uploading || (!content && !file)} className="rounded-full bg-yellow-400 hover:bg-yellow-500 text-black px-6 font-bold shadow-md shadow-yellow-200">

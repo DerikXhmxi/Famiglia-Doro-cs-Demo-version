@@ -1,23 +1,23 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
-import '../lib/i18n'
-import { 
-  X, Eye, Bell, Lock, Wifi, CreditCard, Users, FileText, 
-  ChevronRight, ChevronLeft, Camera, Search, Mic, MapPin, 
-  PlusCircle, Ban, Check, LogOut, ShieldAlert, DollarSign, 
+import '@/lib/i18n'
+import {
+  X, Eye, Bell, Lock, Wifi, CreditCard, Users, FileText,
+  ChevronRight, ChevronLeft, Camera, Search, Mic, MapPin,
+  PlusCircle, Ban, Check, LogOut, DollarSign,
   ArrowUpRight, ArrowDownLeft, Trash2, Loader2, Globe,
   ShoppingBag, Ticket, Receipt
 } from 'lucide-react'
+
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useTranslation } from 'react-i18next' // <--- REQUIRED FOR LANGUAGE
+import { useTranslation } from 'react-i18next'
 
-// --- INTERNAL CUSTOM MODAL ---
+// INTERNAL CUSTOM MODAL ---
 function CustomModal({ isOpen, onClose, title, children }: { isOpen: boolean, onClose: () => void, title: string, children: React.ReactNode }) {
     if (!isOpen) return null;
     return (
@@ -70,37 +70,51 @@ function VisibilitySettings({ session }: { session: any }) {
   )
 }
 
-// --- 2. LANGUAGE SETTINGS (NEW) ---
+// --- 2. LANGUAGE SETTINGS ---
 function LanguageSettings() {
-const { i18n } = useTranslation(); // Use the hook
+    const { i18n, t } = useTranslation(); // Use the hook
     
     // Fallback if i18n isn't ready yet
     if (!i18n) return null;
 
     const currentLang = i18n.language || 'en';
+    
     const LANGUAGES = [
-        { code: 'en', name: 'English (US)', flag: '🇺🇸' },
-        { code: 'zh', name: '中文 (Chinese)', flag: '🇨🇳' },
-        { code: 'es', name: 'Español (Spanish)', flag: '🇪🇸' },
-        { code: 'ar', name: 'العربية (Arabic)', flag: '🇸🇦' },
-        { code: 'pt', name: 'Português', flag: '🇧🇷' },
-        { code: 'id', name: 'Indonesian', flag: '🇮🇩' },
-        { code: 'fr', name: 'Français', flag: '🇫🇷' },
-        { code: 'ja', name: '日本語 (Japanese)', flag: '🇯🇵' },
-        { code: 'ru', name: 'Русский', flag: '🇷🇺' },
-        { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
-        { code: 'hi', name: 'हिन्दी (Hindi)', flag: '🇮🇳' },
-        { code: 'it', name: 'Italiano', flag: '🇮🇹' },
+      { code: 'en', name: 'English (US)', flag: '🇺🇸' },
+      { code: 'zh', name: '中文 (Chinese)', flag: '🇨🇳' },
+      { code: 'es', name: 'Español', flag: '🇪🇸' },
+      { code: 'ar', name: 'العربية', flag: '🇸🇦' },
+      { code: 'pt', name: 'Português', flag: '🇧🇷' },
+      { code: 'fr', name: 'Français', flag: '🇫🇷' },
+      { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+      { code: 'hi', name: 'हिन्दी', flag: '🇮🇳' },
+      { code: 'ja', name: '日本語', flag: '🇯🇵' },
+      { code: 'ru', name: 'Русский', flag: '🇷🇺' },
+      { code: 'ko', name: '한국어 (Korean)', flag: '🇰🇷' },
+      { code: 'tr', name: 'Türkçe', flag: '🇹🇷' },
+      { code: 'ur', name: 'اردو', flag: '🇵🇰' },
+      { code: 'bn', name: 'বাংলা (Bengali)', flag: '🇧🇩' },
+      { code: 'nl', name: 'Nederlands', flag: '🇳🇱' },
+      { code: 'sv', name: 'Svenska', flag: '🇸🇪' },
+      { code: 'th', name: 'ไทย (Thai)', flag: '🇹🇭' },
+      { code: 'vi', name: 'Tiếng Việt', flag: '🇻🇳' }
     ];
+
+    const handleLanguageChange = (code: string) => {
+        i18n.changeLanguage(code);
+        // Handle Right-to-Left for Arabic/Urdu
+        document.dir = (code === 'ar' || code === 'ur') ? 'rtl' : 'ltr';
+    }
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider ml-1 mb-2">App Language</h3>
+            {/* Translated Header */}
+            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider ml-1 mb-2">{t('app_language') || 'App Language'}</h3>
             <div className="bg-zinc-800 rounded-2xl overflow-hidden text-white divide-y divide-zinc-700/50 shadow-lg border border-zinc-700">
                 {LANGUAGES.map((lang) => (
                     <div 
                         key={lang.code} 
-                        onClick={() => i18n.changeLanguage(lang.code)}
+                        onClick={() => handleLanguageChange(lang.code)}
                         className="p-4 flex items-center justify-between cursor-pointer hover:bg-zinc-700/50 transition-colors"
                     >
                         <div className="flex items-center gap-4">
@@ -460,60 +474,113 @@ function BlockedUsers({ session }: { session: any }) {
     )
 }
 
-// --- MAIN CONTAINER ---
-export default function SettingsPanel({ onClose, onLogout }: { onClose: () => void, onLogout: () => void }) {
-  const [activeTab, setActiveTab] = useState("visibility") 
+/* =======================================================
+   MAIN SETTINGS PANEL
+======================================================= */
+
+export default function SettingsPanel({
+  onClose,
+  onLogout
+}: {
+  onClose: () => void
+  onLogout: () => void
+}) {
+  const { t, i18n } = useTranslation()
+  const [activeTab, setActiveTab] = useState("visibility")
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(true)
   const [session, setSession] = useState<any>(null)
 
   useEffect(() => {
-      supabase.auth.getSession().then(({ data }) => setSession(data.session))
+    supabase.auth.getSession().then(({ data }) => setSession(data.session))
   }, [])
 
-  if (!session) return <div className="fixed inset-0 z-[200] bg-white flex items-center justify-center"><Loader2 className="animate-spin w-8 h-8 text-yellow-500"/></div>
+  /* 🔑 IMPORTANT FIX — menuItems MUST be memoized */
+  const menuItems = useMemo(() => [
+    { id: 'visibility', label: t('set_visibility'), icon: Eye, component: () => <VisibilitySettings session={session} /> },
+    { id: 'language', label: t('set_language'), icon: Globe, component: () => <LanguageSettings /> },
+    { id: 'notifications', label: t('set_notifications'), icon: Bell, component: () => <NotificationSettings session={session} /> },
+    { id: 'permissions', label: t('set_permissions'), icon: Lock, component: () => <PermissionsSettings session={session} /> },
+    { id: 'media', label: t('set_media'), icon: Wifi, component: () => <MediaPreferences session={session} /> },
+    { id: 'revenue', label: t('set_revenue'), icon: DollarSign, component: () => <ManageRevenue session={session} /> },
+    { id: 'history', label: t('set_history'), icon: Receipt, component: () => <PurchaseHistory session={session} /> },
+    { id: 'cards', label: t('set_cards'), icon: CreditCard, component: () => <MyCards session={session} /> },
+    { id: 'privacy', label: t('set_privacy'), icon: Lock, component: () => <div className="p-10 text-center text-zinc-400">Privacy Policy</div> },
+    { id: 'licenses', label: t('set_licenses'), icon: FileText, component: () => <div className="p-10 text-center text-zinc-400">MIT License</div> },
+    { id: 'blocked', label: t('set_blocked'), icon: Users, component: () => <BlockedUsers session={session} /> },
+  ], [t, i18n.language, session])
 
-  const menuItems = [
-    { id: 'visibility', label: 'My Visibility', icon: Eye, component: () => <VisibilitySettings session={session} /> },
-    { id: 'language', label: 'Language', icon: Globe, component: () => <LanguageSettings /> }, // <--- ADDED LANGUAGE TAB
-    { id: 'notifications', label: 'Notifications', icon: Bell, component: () => <NotificationSettings session={session} /> },
-    { id: 'permissions', label: 'Permissions', icon: Lock, component: () => <PermissionsSettings session={session} /> },
-    { id: 'media', label: 'Media Preferences', icon: Wifi, component: () => <MediaPreferences session={session} /> },
-    { id: 'revenue', label: 'Manage Revenue', icon: DollarSign, component: () => <ManageRevenue session={session} /> },
-    { id: 'history', label: 'Purchase History', icon: Receipt, component: () => <PurchaseHistory session={session} /> },
-    { id: 'cards', label: 'Payment Methods', icon: CreditCard, component: () => <MyCards session={session} /> },
-    { id: 'privacy', label: 'Privacy', icon: Lock, component: () => <div className="p-10 text-center text-zinc-400">Privacy Policy Content</div> },
-    { id: 'licenses', label: 'Licenses', icon: FileText, component: () => <div className="p-10 text-center text-zinc-400">MIT License</div> },
-    { id: 'blocked', label: 'Blocked Users', icon: Users, component: () => <BlockedUsers session={session} /> },
-  ]
+  const ActiveComponent =
+    menuItems.find(i => i.id === activeTab)?.component || (() => null)
 
-  const ActiveComponent = menuItems.find(i => i.id === activeTab)?.component || (() => null)
-  const activeLabel = menuItems.find(i => i.id === activeTab)?.label
+  const activeLabel =
+    menuItems.find(i => i.id === activeTab)?.label
 
-  const handleMobileNav = (id: string) => { setActiveTab(id); setIsMobileMenuOpen(false); }
+  if (!session) {
+    return (
+      <div className="fixed inset-0 z-[200] flex items-center justify-center bg-white">
+        <Loader2 className="w-8 h-8 animate-spin text-yellow-500" />
+      </div>
+    )
+  }
 
   return (
-    <div className="fixed inset-0 z-[150] bg-zinc-100 flex flex-col md:flex-row font-sans animate-in zoom-in-95 duration-200">
-        <div className={`w-full md:w-80 bg-zinc-950 text-white flex flex-col h-full border-r border-zinc-800 ${!isMobileMenuOpen ? 'hidden md:flex' : 'flex'}`}>
-            <div className="p-6 border-b border-zinc-900 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-yellow-500 tracking-tight">Settings</h2>
-                <Button variant="ghost" size="icon" className="md:hidden text-zinc-400 hover:text-white" onClick={onClose}><X className="w-5 h-5"/></Button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-1 custom-scrollbar">
-                <div className="bg-zinc-900 rounded-xl p-4 mb-6 border border-zinc-800/50"><span className="font-bold text-sm block mb-1 text-white">Famiglia doro TV Pro</span><span className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">Manage subscription</span></div>
-                {menuItems.map((item) => (
-                    <button key={item.id} onClick={() => handleMobileNav(item.id)} className={`w-full flex items-center justify-between p-3.5 rounded-xl transition-all duration-200 group ${activeTab === item.id ? 'bg-yellow-500 text-black font-bold shadow-md shadow-yellow-500/20' : 'hover:bg-zinc-900 text-zinc-400 hover:text-white'}`}>
-                        <div className="flex items-center gap-3"><item.icon className={`w-4 h-4 ${activeTab === item.id ? 'text-black' : 'text-zinc-500 group-hover:text-yellow-500 transition-colors'}`} /><span className="text-sm">{item.label}</span></div>
-                        <ChevronRight className={`w-4 h-4 transition-transform ${activeTab === item.id ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2 group-hover:opacity-50 group-hover:translate-x-0'}`} />
-                    </button>
-                ))}
-            </div>
-            <div className="p-4 border-t border-zinc-900 bg-zinc-950"><button onClick={onLogout} className="w-full py-4 bg-zinc-900 hover:bg-zinc-800 rounded-xl text-xs font-bold text-red-500 uppercase tracking-wider transition-all flex items-center justify-center gap-2 group"><LogOut className="w-4 h-4 group-hover:-translate-x-1 transition-transform"/> Log Out</button></div>
+    <div className="fixed inset-0 z-[150] bg-zinc-100 flex flex-col md:flex-row">
+      {/* SIDEBAR */}
+      <aside className={`w-full md:w-80 bg-zinc-950 text-white ${!isMobileMenuOpen ? 'hidden md:flex' : 'flex'} flex-col`}>
+        <div className="p-6 border-b border-zinc-900 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-yellow-500">
+            {t('nav_settings')}
+          </h2>
+          <Button variant="ghost" size="icon" className="md:hidden" onClick={onClose}>
+            <X />
+          </Button>
         </div>
-        <div className={`flex-1 bg-white flex flex-col h-full relative ${isMobileMenuOpen ? 'hidden md:flex' : 'flex'}`}>
-            <div className="md:hidden p-4 border-b border-zinc-100 flex items-center gap-3 bg-white sticky top-0 z-10"><Button size="icon" variant="ghost" onClick={() => setIsMobileMenuOpen(true)} className="-ml-2"><ChevronLeft className="w-6 h-6"/></Button><h3 className="font-bold text-lg">{activeLabel}</h3></div>
-            <div className="hidden md:flex p-8 border-b border-zinc-100 justify-between items-center bg-white"><h2 className="text-3xl font-bold text-zinc-900 tracking-tight">{activeLabel || "Preferences"}</h2><Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-zinc-100"><X className="w-6 h-6"/></Button></div>
-            <div className="flex-1 overflow-y-auto p-4 md:p-10 bg-zinc-50/50"><div className="max-w-2xl mx-auto pb-20"><ActiveComponent /></div></div>
+
+        <div className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {menuItems.map(item => (
+            <button
+              key={item.id}
+              onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false) }}
+              className={`w-full flex items-center justify-between p-3 rounded-xl ${
+                activeTab === item.id
+                  ? 'bg-yellow-500 text-black font-bold'
+                  : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <item.icon className="w-4 h-4" />
+                <span>{item.label}</span>
+              </div>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          ))}
         </div>
+
+        <div className="p-4 border-t border-zinc-900">
+          <button
+            onClick={onLogout}
+            className="w-full py-3 bg-zinc-900 text-red-500 rounded-xl font-bold"
+          >
+            {t('nav_logout')}
+          </button>
+        </div>
+      </aside>
+
+      {/* CONTENT */}
+      <main className={`flex-1 bg-white ${isMobileMenuOpen ? 'hidden md:flex' : 'flex'} flex-col`}>
+        <div className="p-6 border-b flex justify-between items-center">
+          <h1 className="text-2xl font-bold">{activeLabel}</h1>
+          <Button size="icon" variant="ghost" onClick={onClose}>
+            <X />
+          </Button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 bg-zinc-50">
+          <div className="max-w-2xl mx-auto">
+            <ActiveComponent />
+          </div>
+        </div>
+      </main>
     </div>
   )
 }

@@ -12,7 +12,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { 
   Calendar, MapPin, Plus, Loader2, Clock, CloudRain, 
-  Upload, ArrowRight, Ticket, Minus, AlertCircle, Trash2, Edit, User 
+  Upload, ArrowRight, Ticket, Minus, AlertCircle, Trash2, Edit, User, 
+  Share2
 } from 'lucide-react'
 import PaymentModal from '@/components/PaymentModal'
 
@@ -21,20 +22,33 @@ const MapViewer = dynamic(() => import('./MapViewer'), {
     ssr: false, 
     loading: () => <div className="h-full w-full bg-zinc-100 animate-pulse rounded-xl" /> 
 })
+type EventsFeedProps = {
+    user: any;
+    onShare: (event: any) => void;
+    deepLink?: string | null;
+}
 
-export default function EventsFeed({ user }: { user: any }) {
-  const [events, setEvents] = useState<any[]>([])
+
+export default function EventsFeed({ user, onShare, deepLink }: EventsFeedProps) {  const [events, setEvents] = useState<any[]>([])
   
   // Dialog & Modal States
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<any>(null)
   const [checkoutEvent, setCheckoutEvent] = useState<any>(null)
   const [isMapOpen, setIsMapOpen] = useState(false)
-  
   // Logic States
   const [uploading, setUploading] = useState(false)
   const [ticketQty, setTicketQty] = useState(1)
-  
+  useEffect(() => {
+      if (deepLink) {
+          const fetchLinkedEvent = async () => {
+              const { data } = await supabase.from('events').select('*, profiles:organizer_id(id, username, avatar_url)').eq('id', deepLink).single()
+              if (data) setSelectedEvent(data)
+          }
+          fetchLinkedEvent()
+      }
+  }, [deepLink])
+
   const [formData, setFormData] = useState({
     title: '', description: '', price: '', 
     address: '', city: '', state: '', country: '', zip_code: '',
@@ -235,6 +249,10 @@ export default function EventsFeed({ user }: { user: any }) {
                             {event.ticket_price > 0 ? `$${event.ticket_price}` : 'Free'}
                         </Badge>
 
+{/* --- SHARE BUTTON ON CARD --- */}
+                        <Button size="icon" className="absolute top-16 right-4 rounded-full bg-white/90 hover:bg-white text-zinc-900 shadow-md" onClick={(e) => { e.stopPropagation(); onShare(event) }}>
+                            <Share2 className="w-4 h-4"/>
+                        </Button>
                         {/* --- OWNER BADGE (FIXED) --- */}
                         {isOwner && (
                             <Badge className="absolute bottom-4 left-4 bg-orange-600 text-white border-none shadow-lg px-3 py-1.5 text-xs font-bold animate-in fade-in">

@@ -6,21 +6,56 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Send, Loader2, Lock, Globe, Users, Image as ImageIcon, X, Phone, Video, MoreVertical } from 'lucide-react'
 
+
+const FormattedMessage = ({ text, isMe, onNavigate }: { text: string, isMe: boolean, onNavigate: (type: string, id: string) => void }) => {
+    if (!text) return null;
+    const urlRegex = /((?:https?:\/\/)[^\s]+)/g;
+    const parts = text.split(urlRegex);
+    return (
+        <span className="whitespace-pre-wrap break-words">
+            {parts.map((part, i) => {
+                if (part.match(urlRegex)) {
+                    const isInternal = typeof window !== 'undefined' && part.startsWith(window.location.origin);
+                    return (
+                        <a key={i} href={part} target={isInternal ? undefined : "_blank"} rel="noopener noreferrer" 
+                            onClick={(e) => {
+                                if (isInternal) {
+                                    e.preventDefault(); e.stopPropagation();
+                                    const path = part.replace(window.location.origin + '/', '');
+                                    const [type, id] = path.split('/');
+                                    if (type && id) onNavigate(type, id);
+                                }
+                            }}
+                            className={`underline font-bold hover:opacity-70 cursor-pointer ${isMe ? 'text-white' : 'text-blue-600'}`}>
+                            {part}
+                        </a>
+                    );
+                }
+                return <span key={i}>{part}</span>;
+            })}
+        </span>
+    );
+};
+type ChatSheetProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  session: any;
+  receiver?: any;
+  group?: any;
+  onCall?: (target: any, isVideo: boolean) => void;
+  onNavigate: (type: string, id: string) => void; // <--- Added here
+}
 export default function ChatSheet({ 
   isOpen, 
   onClose, 
   session, 
   receiver, 
   group,
-  onCall // <--- ADDED THIS PROP
-}: { 
-  isOpen: boolean, 
-  onClose: () => void, 
-  session: any, 
-  receiver?: any, 
-  group?: any,
-  onCall?: (target: any, isVideo: boolean) => void // <--- ADDED THIS TYPE
-}) {
+  onCall,
+  onNavigate // <--- Added here
+}:  
+  ChatSheetProps
+) {
   const [messages, setMessages] = useState<any[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(false)
@@ -118,7 +153,14 @@ export default function ChatSheet({
                         <Avatar className="h-8 w-8 ring-2 ring-white"><AvatarImage src={msg.profiles?.avatar_url} /><AvatarFallback>U</AvatarFallback></Avatar>
                         <div className={`rounded-2xl px-4 py-2 max-w-[80%] text-sm shadow-sm ${isMe ? 'bg-zinc-900 text-white rounded-tr-none' : 'bg-white border border-zinc-100 text-zinc-800 rounded-tl-none'}`}>
                             {!isMe && <p className="text-[10px] text-zinc-400 font-bold mb-1">{msg.profiles?.username}</p>}
-                            {msg.content}
+                            <FormattedMessage 
+                                text={msg.content} 
+                                isMe={isMe} 
+                                onNavigate={(t, i) => {
+                                    onClose(); // Close the sheet
+                                    onNavigate(t, i); // Perform navigation
+                                }} 
+                            />
                             {msg.media_url && <img src={msg.media_url} className="mt-2 rounded-lg max-h-40 cursor-pointer" onClick={() => setSelectedMedia(msg.media_url)} />}
                         </div>
                     </div>

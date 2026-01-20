@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Card } from '@/components/ui/card'
@@ -12,14 +14,22 @@ import {
   ShoppingBag, Plus, Search, Loader2, MessageCircle, 
   Play, Video as VideoIcon, Image as ImageIcon, Trash2, 
   ShoppingCart, Check, Minus, X, UploadCloud, CheckCircle,
-  Edit, User, Calendar
+  Edit, User, Calendar, Share2
 } from 'lucide-react'
 import PaymentModal from '@/components/PaymentModal'
+
+// --- TYPE DEFINITION ---
+type MallFeedProps = {
+    session: any;
+    onChat: (seller: any) => void;
+    onShare: (item: any) => void;
+    globalSearch?: string;
+    deepLink?: string | null;
+}
 
 // --- CART DRAWER ---
 function CartDrawer({ cart, onUpdateQty, onRemove, onCheckout }: { cart: any[], onUpdateQty: (id: number, delta: number) => void, onRemove: (id: number) => void, onCheckout: () => void }) {
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-    
     return (
         <Sheet>
             <SheetTrigger asChild>
@@ -38,11 +48,7 @@ function CartDrawer({ cart, onUpdateQty, onRemove, onCheckout }: { cart: any[], 
                             <div className="flex-1 min-w-0">
                                 <p className="font-bold text-sm line-clamp-1">{item.name}</p>
                                 <p className="text-zinc-500 text-xs mb-2">${item.price} each</p>
-                                <div className="flex items-center gap-2">
-                                    <Button size="icon" variant="outline" className="h-6 w-6 rounded-full" onClick={() => onUpdateQty(item.id, -1)} disabled={item.quantity <= 1}><Minus className="w-3 h-3"/></Button>
-                                    <span className="text-sm font-bold w-4 text-center">{item.quantity}</span>
-                                    <Button size="icon" variant="outline" className="h-6 w-6 rounded-full" onClick={() => onUpdateQty(item.id, 1)}><Plus className="w-3 h-3"/></Button>
-                                </div>
+                                <div className="flex items-center gap-2"><Button size="icon" variant="outline" className="h-6 w-6 rounded-full" onClick={() => onUpdateQty(item.id, -1)} disabled={item.quantity <= 1}><Minus className="w-3 h-3"/></Button><span className="text-sm font-bold w-4 text-center">{item.quantity}</span><Button size="icon" variant="outline" className="h-6 w-6 rounded-full" onClick={() => onUpdateQty(item.id, 1)}><Plus className="w-3 h-3"/></Button></div>
                             </div>
                             <Button size="icon" variant="ghost" className="h-8 w-8 text-red-400 hover:bg-red-50 hover:text-red-600" onClick={() => onRemove(item.id)}><Trash2 className="w-4 h-4"/></Button>
                         </div>
@@ -57,8 +63,7 @@ function CartDrawer({ cart, onUpdateQty, onRemove, onCheckout }: { cart: any[], 
     )
 }
 
-// --- MAIN MALL COMPONENT ---
-export default function MallFeed({ session, onChat, globalSearch = '' }: { session: any, onChat: (seller: any) => void, globalSearch?: string }) {
+export default function MallFeed({ session, onChat, onShare, globalSearch = '', deepLink }: MallFeedProps) {  
   const [products, setProducts] = useState<any[]>([])
   const [cart, setCart] = useState<any[]>([])
   const [localSearch, setLocalSearch] = useState('')
@@ -71,6 +76,20 @@ export default function MallFeed({ session, onChat, globalSearch = '' }: { sessi
   const [activeMediaIndex, setActiveMediaIndex] = useState(0)
   const [addedIds, setAddedIds] = useState<Set<number>>(new Set())
   const [checkoutItem, setCheckoutItem] = useState<any>(null)
+
+  // --- DEEP LINK HANDLER ---
+  useEffect(() => {
+      if (deepLink) {
+          const fetchLinkedProduct = async () => {
+              const { data } = await supabase.from('products').select('*, profiles(id, username, avatar_url)').eq('id', deepLink).single()
+              if (data) {
+                  setSelectedProduct(data)
+                  setActiveMediaIndex(0)
+              }
+          }
+          fetchLinkedProduct()
+      }
+  }, [deepLink])
 
   useEffect(() => { fetchProducts(); const channel = supabase.channel('mall_realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => fetchProducts()).subscribe(); return () => { supabase.removeChannel(channel) } }, [globalSearch])
   
@@ -88,7 +107,6 @@ export default function MallFeed({ session, onChat, globalSearch = '' }: { sessi
       return matchName || matchDesc 
   })
 
-  // ... (File handling logic remains same as before) ...
   const handleImageSelect = (e: any) => { const file = e.target.files?.[0]; if (file) { setNewProduct({ ...newProduct, imageFile: file }); setPreviews({ ...previews, image: URL.createObjectURL(file) }) } }
   const handleVideoSelect = (e: any) => { const file = e.target.files?.[0]; if (file) { setNewProduct({ ...newProduct, videoFile: file }); setPreviews({ ...previews, video: URL.createObjectURL(file) }) } }
   const clearFile = (type: any) => { if (type === 'image') { setNewProduct({ ...newProduct, imageFile: null }); setPreviews({ ...previews, image: '' }) } else { setNewProduct({ ...newProduct, videoFile: null }); setPreviews({ ...previews, video: '' }) } }
@@ -114,9 +132,8 @@ export default function MallFeed({ session, onChat, globalSearch = '' }: { sessi
       } catch (err: any) { console.error(err); setUploading(false); alert("Error") } 
   }
   
-  // --- NEW DELETE LOGIC ---
   const handleDelete = async (id: number) => {
-      if(!confirm("Are you sure you want to delete this listing?")) return;
+      if(!confirm("Are you sure?")) return;
       await supabase.from('products').delete().eq('id', id);
       setProducts(prev => prev.filter(p => p.id !== id));
       if(selectedProduct?.id === id) setSelectedProduct(null);
@@ -136,23 +153,7 @@ export default function MallFeed({ session, onChat, globalSearch = '' }: { sessi
                 <CartDrawer cart={cart} onUpdateQty={updateCartQty} onRemove={removeFromCart} onCheckout={() => alert("Cart checkout coming soon")} />
                 <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                     <DialogTrigger asChild><Button className="rounded-full bg-zinc-900 hover:bg-black text-white"><Plus className="w-4 h-4 mr-2 text-yellow-400"/> Sell Item</Button></DialogTrigger>
-                    <DialogContent>
-                        {success ? (<div className="h-[400px] flex flex-col items-center justify-center text-center"><div className="h-20 w-20 bg-green-100 rounded-full flex items-center justify-center mb-4"><CheckCircle className="w-10 h-10 text-green-600" /></div><h3 className="text-2xl font-bold">Listed!</h3></div>) : (
-                            <>
-                            <DialogHeader><DialogTitle>List a Product</DialogTitle></DialogHeader>
-                            <div className="space-y-4 pt-4">
-                                <div className="flex gap-4">
-                                    <div className={`flex-1 aspect-square rounded-xl border-2 ${previews.image ? 'border-solid border-yellow-400' : 'border-dashed border-zinc-200'} bg-zinc-50 relative overflow-hidden group`}>{previews.image ? <><img src={previews.image} className="w-full h-full object-cover" /><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"><Button size="icon" variant="destructive" onClick={() => clearFile('image')}><X className="w-4 h-4"/></Button></div></> : <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer"><ImageIcon className="w-8 h-8 text-zinc-300 mb-2"/><span className="text-xs font-bold text-zinc-500">Image</span><input type="file" accept="image/*" className="hidden" onChange={handleImageSelect} /></label>}</div>
-                                    <div className={`flex-1 aspect-square rounded-xl border-2 ${previews.video ? 'border-solid border-yellow-400' : 'border-dashed border-zinc-200'} bg-zinc-50 relative overflow-hidden group`}>{previews.video ? <><div className="w-full h-full bg-black flex items-center justify-center"><VideoIcon className="w-8 h-8 text-white" /></div><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"><Button size="icon" variant="destructive" onClick={() => clearFile('video')}><X className="w-4 h-4"/></Button></div></> : <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer"><UploadCloud className="w-8 h-8 text-zinc-300 mb-2"/><span className="text-xs font-bold text-zinc-500">Video</span><input type="file" accept="video/*" className="hidden" onChange={handleVideoSelect} /></label>}</div>
-                                </div>
-                                <Input placeholder="Product Name" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} className="focus-visible:ring-yellow-400"/>
-                                <Textarea placeholder="Description..." value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} className="resize-none focus-visible:ring-yellow-400"/>
-                                <div className="relative"><span className="absolute left-3 top-2.5 text-zinc-500 font-bold">$</span><Input type="number" placeholder="Price" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} className="pl-7 focus-visible:ring-yellow-400"/></div>
-                                <Button onClick={handleCreate} disabled={uploading} className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold h-12">{uploading ? <Loader2 className="animate-spin"/> : "List Item"}</Button>
-                            </div>
-                            </>
-                        )}
-                    </DialogContent>
+                    <DialogContent>{success ? (<div className="h-[400px] flex flex-col items-center justify-center text-center"><div className="h-20 w-20 bg-green-100 rounded-full flex items-center justify-center mb-4"><CheckCircle className="w-10 h-10 text-green-600" /></div><h3 className="text-2xl font-bold">Listed!</h3></div>) : (<> <DialogHeader><DialogTitle>List a Product</DialogTitle></DialogHeader><div className="space-y-4 pt-4"><div className="flex gap-4"><div className={`flex-1 aspect-square rounded-xl border-2 ${previews.image ? 'border-solid border-yellow-400' : 'border-dashed border-zinc-200'} bg-zinc-50 relative overflow-hidden group`}>{previews.image ? <><img src={previews.image} className="w-full h-full object-cover" /><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"><Button size="icon" variant="destructive" onClick={() => clearFile('image')}><X className="w-4 h-4"/></Button></div></> : <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer"><ImageIcon className="w-8 h-8 text-zinc-300 mb-2"/><span className="text-xs font-bold text-zinc-500">Image</span><input type="file" accept="image/*" className="hidden" onChange={handleImageSelect} /></label>}</div><div className={`flex-1 aspect-square rounded-xl border-2 ${previews.video ? 'border-solid border-yellow-400' : 'border-dashed border-zinc-200'} bg-zinc-50 relative overflow-hidden group`}>{previews.video ? <><div className="w-full h-full bg-black flex items-center justify-center"><VideoIcon className="w-8 h-8 text-white" /></div><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"><Button size="icon" variant="destructive" onClick={() => clearFile('video')}><X className="w-4 h-4"/></Button></div></> : <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer"><UploadCloud className="w-8 h-8 text-zinc-300 mb-2"/><span className="text-xs font-bold text-zinc-500">Video</span><input type="file" accept="video/*" className="hidden" onChange={handleVideoSelect} /></label>}</div></div><Input placeholder="Product Name" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} className="focus-visible:ring-yellow-400"/><Textarea placeholder="Description..." value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} className="resize-none focus-visible:ring-yellow-400"/><div className="relative"><span className="absolute left-3 top-2.5 text-zinc-500 font-bold">$</span><Input type="number" placeholder="Price" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} className="pl-7 focus-visible:ring-yellow-400"/></div><Button onClick={handleCreate} disabled={uploading} className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold h-12">{uploading ? <Loader2 className="animate-spin"/> : "List Item"}</Button></div></>)}</DialogContent>
                 </Dialog>
             </div>
         </div>
@@ -166,18 +167,21 @@ export default function MallFeed({ session, onChat, globalSearch = '' }: { sessi
                             <img src={product.image_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                             {product.video_url && <div className="absolute top-3 right-3 bg-black/50 p-1.5 rounded-full text-white"><Play className="w-3 h-3 fill-current" /></div>}
                             <div className="absolute bottom-3 left-3 bg-white/90 px-3 py-1 rounded-full text-xs font-bold text-zinc-900 shadow-sm">${product.price}</div>
-                            {/* OWNER BADGE */}
+                            
+                            {/* --- ADDED SHARE BUTTON ON CARD --- */}
+                            <Button 
+                                size="icon" 
+                                className="absolute top-3 right-3 rounded-full bg-white/90 hover:bg-white text-zinc-900 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-10" 
+                                onClick={(e) => { e.stopPropagation(); onShare(product); }}
+                            >
+                                <Share2 className="w-4 h-4"/>
+                            </Button>
+
                             {isOwner && <div className="absolute top-3 left-3 bg-zinc-900 text-white px-2 py-1 rounded-lg text-[10px] font-bold uppercase shadow-md">Your Listing</div>}
                         </div>
                         <div className="p-4">
                             <h3 className="font-bold line-clamp-1 text-zinc-900">{product.name}</h3>
-                            <div className="flex justify-between items-center mt-1">
-                                <div className="flex items-center gap-1.5 overflow-hidden">
-                                    <Avatar className="h-4 w-4"><AvatarImage src={product.profiles?.avatar_url}/><AvatarFallback className="text-[8px] bg-zinc-200">U</AvatarFallback></Avatar>
-                                    <span className="text-[10px] text-zinc-500 truncate max-w-[80px]">{isOwner ? "You" : product.profiles?.username}</span>
-                                </div>
-                                <span className="text-[10px] text-zinc-400">{new Date(product.created_at).toLocaleDateString()}</span>
-                            </div>
+                            <div className="flex justify-between items-center mt-1"><div className="flex items-center gap-1.5 overflow-hidden"><Avatar className="h-4 w-4"><AvatarImage src={product.profiles?.avatar_url}/><AvatarFallback className="text-[8px] bg-zinc-200">U</AvatarFallback></Avatar><span className="text-[10px] text-zinc-500 truncate max-w-[80px]">{isOwner ? "You" : product.profiles?.username}</span></div><span className="text-[10px] text-zinc-400">{new Date(product.created_at).toLocaleDateString()}</span></div>
                         </div>
                     </Card>
                 )
@@ -190,48 +194,30 @@ export default function MallFeed({ session, onChat, globalSearch = '' }: { sessi
                 {selectedProduct && (() => {
                     const mediaList = getMediaList(selectedProduct); const activeMedia = mediaList[activeMediaIndex]
                     const isOwner = selectedProduct.seller_id === session.user.id
-                    
                     return (
                         <>
                         <div className="w-full md:w-3/5 bg-black flex flex-col relative group"><div className="flex-1 relative flex items-center justify-center overflow-hidden bg-zinc-900">{activeMedia.type === 'video' ? <video src={activeMedia.url} autoPlay muted loop playsInline className="w-full h-full object-contain" /> : <img src={activeMedia.url} className="w-full h-full object-contain" />}</div>{mediaList.length > 1 && (<div className="h-24 bg-zinc-900/90 border-t border-white/10 flex items-center justify-center gap-3 p-4 z-20 backdrop-blur-sm">{mediaList.map((media, idx) => (<div key={idx} onClick={() => setActiveMediaIndex(idx)} className={`relative w-16 h-16 rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${activeMediaIndex === idx ? 'border-yellow-400 scale-105 opacity-100' : 'border-transparent opacity-60 hover:opacity-100'}`}><img src={selectedProduct.image_url} className="w-full h-full object-cover" />{media.type === 'video' && <div className="absolute inset-0 flex items-center justify-center bg-black/40"><Play className="w-6 h-6 text-white fill-current"/></div>}</div>))}</div>)}</div>
-                        
                         <div className="w-full md:w-2/5 flex flex-col h-full bg-white border-l border-zinc-100">
                             <div className="p-8 border-b border-zinc-50 flex justify-between items-start">
-                                <div>
-                                    <h2 className="text-3xl font-black text-zinc-900 leading-tight mb-2">{selectedProduct.name}</h2>
-                                    <p className="text-4xl font-bold text-yellow-600">${selectedProduct.price}</p>
+                                <div><h2 className="text-3xl font-black text-zinc-900 leading-tight mb-2">{selectedProduct.name}</h2><p className="text-4xl font-bold text-yellow-600">${selectedProduct.price}</p></div>
+                                <div className="flex gap-2">
+                                    {/* --- ADDED SHARE BUTTON IN MODAL --- */}
+                                    <Button variant="outline" size="icon" className="rounded-full border-zinc-200 hover:bg-yellow-50 hover:border-yellow-300" onClick={() => onShare(selectedProduct)}>
+                                        <Share2 className="w-4 h-4"/>
+                                    </Button>
+                                    {isOwner && <Badge variant="secondary" className="bg-zinc-100 text-zinc-600">You Own This</Badge>}
                                 </div>
-                                {isOwner && <Badge variant="secondary" className="bg-zinc-100 text-zinc-600">You Own This</Badge>}
                             </div>
-                            
                             <div className="flex-1 p-8 overflow-y-auto">
-                                <div className="flex items-center gap-3 mb-6 p-3 bg-zinc-50 rounded-2xl w-fit">
-                                    <Avatar><AvatarImage src={selectedProduct.profiles?.avatar_url}/><AvatarFallback>S</AvatarFallback></Avatar>
-                                    <div>
-                                        <p className="text-sm font-bold">{isOwner ? "You (Seller)" : selectedProduct.profiles?.username}</p>
-                                        <p className="text-xs text-zinc-400 flex items-center gap-1"><Calendar className="w-3 h-3"/> Listed {new Date(selectedProduct.created_at).toLocaleDateString()}</p>
-                                    </div>
-                                </div>
-                                <h3 className="font-bold mb-2">Description</h3>
-                                <p className="text-zinc-500 leading-relaxed whitespace-pre-wrap">{selectedProduct.description || "No description provided."}</p>
+                                <div className="flex items-center gap-3 mb-6 p-3 bg-zinc-50 rounded-2xl w-fit"><Avatar><AvatarImage src={selectedProduct.profiles?.avatar_url}/><AvatarFallback>S</AvatarFallback></Avatar><div><p className="text-sm font-bold">{isOwner ? "You (Seller)" : selectedProduct.profiles?.username}</p><p className="text-xs text-zinc-400 flex items-center gap-1"><Calendar className="w-3 h-3"/> Listed {new Date(selectedProduct.created_at).toLocaleDateString()}</p></div></div>
+                                <h3 className="font-bold mb-2">Description</h3><p className="text-zinc-500 leading-relaxed whitespace-pre-wrap">{selectedProduct.description || "No description provided."}</p>
                             </div>
-                            
                             <div className="p-8 bg-white border-t border-zinc-100 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] space-y-3">
                                  {isOwner ? (
-                                     <div className="grid grid-cols-2 gap-3">
-                                         <Button variant="outline" className="h-14 rounded-xl text-base border-zinc-200" onClick={() => alert("Edit functionality coming soon")}>
-                                             <Edit className="w-5 h-5 mr-2"/> Edit Item
-                                         </Button>
-                                         <Button variant="destructive" className="h-14 rounded-xl text-base bg-red-50 text-red-600 hover:bg-red-100 border border-red-100" onClick={() => handleDelete(selectedProduct.id)}>
-                                             <Trash2 className="w-5 h-5 mr-2"/> Remove
-                                         </Button>
-                                     </div>
+                                     <div className="grid grid-cols-2 gap-3"><Button variant="outline" className="h-14 rounded-xl text-base border-zinc-200" onClick={() => alert("Edit functionality coming soon")}><Edit className="w-5 h-5 mr-2"/> Edit Item</Button><Button variant="destructive" className="h-14 rounded-xl text-base bg-red-50 text-red-600 hover:bg-red-100 border border-red-100" onClick={() => handleDelete(selectedProduct.id)}><Trash2 className="w-5 h-5 mr-2"/> Remove</Button></div>
                                  ) : (
                                      <>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <Button variant="outline" className="h-14 rounded-xl text-base" onClick={() => onChat(selectedProduct.profiles)}><MessageCircle className="w-5 h-5 mr-2"/> Chat</Button>
-                                            <Button variant={addedIds.has(selectedProduct.id) ? "default" : "outline"} className={`h-14 rounded-xl text-base transition-all ${addedIds.has(selectedProduct.id) ? "bg-green-600 hover:bg-green-700 text-white border-none" : "border-yellow-400 text-black hover:bg-yellow-50"}`} onClick={() => addToCart(selectedProduct)}>{addedIds.has(selectedProduct.id) ? <><Check className="w-5 h-5 mr-2"/> Added</> : <><ShoppingBag className="w-5 h-5 mr-2"/> Add Cart</>}</Button>
-                                        </div>
+                                        <div className="grid grid-cols-2 gap-3"><Button variant="outline" className="h-14 rounded-xl text-base" onClick={() => onChat(selectedProduct.profiles)}><MessageCircle className="w-5 h-5 mr-2"/> Chat</Button><Button variant={addedIds.has(selectedProduct.id) ? "default" : "outline"} className={`h-14 rounded-xl text-base transition-all ${addedIds.has(selectedProduct.id) ? "bg-green-600 hover:bg-green-700 text-white border-none" : "border-yellow-400 text-black hover:bg-yellow-50"}`} onClick={() => addToCart(selectedProduct)}>{addedIds.has(selectedProduct.id) ? <><Check className="w-5 h-5 mr-2"/> Added</> : <><ShoppingBag className="w-5 h-5 mr-2"/> Add Cart</>}</Button></div>
                                         <Button className="w-full h-16 bg-zinc-900 hover:bg-black rounded-xl font-bold text-xl shadow-xl text-white" onClick={() => setCheckoutItem(selectedProduct)}>Buy Now</Button>
                                      </>
                                  )}
