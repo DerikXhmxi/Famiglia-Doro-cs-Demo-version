@@ -56,17 +56,38 @@ export default function AuthPage({ onLogin }: { onLogin: () => void }) {
     setModal({ open: true, type: 'loading', title: type === 'login' ? 'Signing In...' : 'Creating Account...', message: 'Please wait a moment.' })
 
     try {
-      if (type === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
-        if (error) throw error
+    if (type === 'login') {
+        console.log("Attempting login with:", email.trim());
+        
+        // 1. Trim the email to remove accidental spaces
+        const { data, error } = await supabase.auth.signInWithPassword({ 
+            email: email.trim(), 
+            password: password 
+        })
+
+        // 2. Log the specific error to the console
+        if (error) {
+            console.error("LOGIN FAILED:", error.message);
+            // Temporarily alert the specific error so you can see it
+            alert("Login Failed: " + error.message);
+            throw error
+        }
         
         setModal({ open: true, type: 'success', title: 'Welcome Back!', message: 'You are now logged in.' })
         setTimeout(() => window.location.reload(), 1500)
 
-      } else {
+      }else {
         const { data, error } = await supabase.auth.signUp({
-            email, password,
-            options: { data: { username, avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}` } }
+            email, 
+            password,
+            options: { 
+                // CRITICAL: Tells Supabase where to redirect after clicking the email link
+                emailRedirectTo: `${window.location.origin}/auth/callback`, 
+                data: { 
+                    username, 
+                    avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}` 
+                } 
+            }
         })
         if (error) throw error
 

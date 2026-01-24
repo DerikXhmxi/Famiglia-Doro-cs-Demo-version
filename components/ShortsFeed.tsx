@@ -202,6 +202,7 @@ export default function ShortsFeed({ session, onShare, deepLink }: ShortsFeedPro
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
     const [caption, setCaption] = useState("")
+    
 
     useEffect(() => { fetchShorts() }, [])
 

@@ -113,7 +113,7 @@ function CustomVideoPlayer({ src }: { src: string }) {
 }
 
 // --- 2. REAL POSTS FEED (OUTSIDE PAGE COMPONENT - CRITICAL FIX) ---
-function RealPostsFeed({ session, onShare, deepLink }: { session: any, onShare: (post: any) => void, deepLink?: string | null }) {
+function RealPostsFeed({ session, onShare, deepLink ,onViewProfile }: { session: any, onShare: (post: any) => void, deepLink?: string | null,onViewProfile: (id: string) => void  }) {
   const { t } = useTranslation()
   const [posts, setPosts] = useState<any[]>([])
   const [expandedPostId, setExpandedPostId] = useState<number | null>(null)
@@ -221,7 +221,7 @@ function RealPostsFeed({ session, onShare, deepLink }: { session: any, onShare: 
       {posts.map((post) => (
         <div key={post.id} id={`post-${post.id}`} className="bg-white rounded-3xl shadow-sm border border-zinc-100 overflow-hidden relative group scroll-mt-24">
           <div className="flex items-center gap-3 p-5">
-              <Avatar><AvatarImage src={post.profiles?.avatar_url}/><AvatarFallback>U</AvatarFallback></Avatar>
+              <Avatar onClick={() => onViewProfile(post.user_id)} className="cursor-pointer"><AvatarImage src={post.profiles?.avatar_url}/><AvatarFallback>U</AvatarFallback></Avatar>
               <div><span className="font-bold text-sm block">{post.profiles?.username}</span><span className="text-xs text-zinc-400 flex items-center gap-1">{formatTimeAgo(post.created_at)}</span></div>
               {session.user.id === post.user_id && <button onClick={() => handleDeletePost(post.id)} className="absolute top-5 right-5 text-zinc-300 hover:text-red-500 transition-colors p-2"><Trash2 className="w-4 h-4"/></button>}
           </div>
@@ -298,6 +298,8 @@ export default function Page() {
   const [activeCall, setActiveCall] = useState<any>(null)
   const [incomingCall, setIncomingCall] = useState<any>(null)
   const [isGuideOpen, setIsGuideOpen] = useState(false) // <--- 2. GUIDE STATE
+  // Inside Page() function:
+const [viewProfileId, setViewProfileId] = useState<string | null>(null) // New State
   // Share & Deep Link State
   const [shareData, setShareData] = useState<{type: string, data: any} | null>(null)
   const [deepLink, setDeepLink] = useState<{type: string, id: string} | null>(null)
@@ -313,7 +315,9 @@ const [isTourOpen, setIsTourOpen] = useState(false) // <--- TOUR STATE
         } else { setLoading(false) }
     })
   }, [])
-
+const handleViewProfile = (id: string) => {
+    setViewProfileId(id)
+}
   const handleOpenShare = (type: string, data: any) => { setShareData({ type, data }) }
   const handleLogout = async () => { await supabase.auth.signOut(); window.location.reload() }
   const startCall = (target: any, isVideo: boolean) => { /* call logic */ }
@@ -428,6 +432,7 @@ const [isTourOpen, setIsTourOpen] = useState(false) // <--- TOUR STATE
                     session={session} 
                     onShare={(post) => handleOpenShare('post', post)} 
                     deepLink={deepLink?.type === 'post' ? deepLink.id : null}
+                    onViewProfile={handleViewProfile}
                   />
               </TabsContent>
               
@@ -483,7 +488,7 @@ const [isTourOpen, setIsTourOpen] = useState(false) // <--- TOUR STATE
           {activeTab !== 'chat' && (
 <aside id="right-sidebar" className="hidden lg:block lg:col-span-3 space-y-6">              <IncomingRequests session={session} />
               <SidebarChatWidget session={session} onChat={openPrivateChat} />
-              <SuggestedFriends session={session} />
+              <SuggestedFriends session={session} onViewProfile={handleViewProfile} />
               <div className="rounded-3xl bg-white p-6 shadow-sm border border-zinc-100">
                   <h3 className="font-bold text-zinc-900 mb-4">{t('widget_trending')}</h3>
                   <div className="space-y-3">{['#FamigliaDoro', '#GoldStandard', '#CreatorEconomy'].map((tag) => (<div key={tag} className="flex justify-between items-center group cursor-pointer"><span className="text-sm text-zinc-600 group-hover:text-yellow-600 transition-colors">{tag}</span><span className="text-xs text-zinc-400">2.5k posts</span></div>))}</div>
@@ -502,8 +507,17 @@ const [isTourOpen, setIsTourOpen] = useState(false) // <--- TOUR STATE
         onCall={startCall} 
         onNavigate={handleDeepLinkNavigation}
       />
-      <ProfileSheet isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} session={session} onProfileUpdate={refreshSession} />
-    </div>
+{/* Replace the old ProfileSheet line with this: */}
+<ProfileSheet 
+    isOpen={!!viewProfileId || isProfileOpen} // Open if viewing someone OR editing self
+    onClose={() => {
+        setViewProfileId(null)
+        setIsProfileOpen(false)
+    }} 
+    session={session} 
+    userId={viewProfileId || session.user.id} // If viewId exists, show them. Else show me.
+    onProfileUpdate={refreshSession} 
+/>    </div>
   )
 }
 

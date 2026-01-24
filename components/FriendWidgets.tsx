@@ -187,7 +187,7 @@ export function IncomingRequests({ session }: { session: any }) {
 }
 
 // --- 3. SUGGESTED FRIENDS (FIXED) ---
-export function SuggestedFriends({ session }: { session: any }) {
+export function SuggestedFriends({ session , onViewProfile}: { session: any ,onViewProfile: (id: string) => void }) {
     const [users, setUsers] = useState<any[]>([])
     const [sentRequests, setSentRequests] = useState<Set<string>>(new Set())
 
@@ -256,7 +256,7 @@ export function SuggestedFriends({ session }: { session: any }) {
                 {users.map(u => (
                     <div key={u.id} className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10 border border-zinc-100">
+                            <Avatar onClick={() => onViewProfile(u.id)} className="h-10 cursor-pointer w-10 border border-zinc-100">
                                 <AvatarImage src={u.avatar_url} />
                                 <AvatarFallback>{u.username?.[0]}</AvatarFallback>
                             </Avatar>
