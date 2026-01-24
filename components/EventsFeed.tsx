@@ -153,8 +153,8 @@ export default function EventsFeed({ user, onShare, deepLink }: EventsFeedProps)
             <PaymentModal 
                 isOpen={!!checkoutEvent} 
                 onClose={() => setCheckoutEvent(null)} 
-                item={checkoutEvent} 
-                type="event" 
+                // CHANGE THIS LINE: from item={checkoutEvent} to plan={checkoutEvent}
+                plan={checkoutEvent} 
                 session={{ user }} 
             />
         )}
@@ -345,7 +345,12 @@ export default function EventsFeed({ user, onShare, deepLink }: EventsFeedProps)
                                             <p className="text-base font-bold text-zinc-900">{isOwner ? "You (Organizer)" : selectedEvent.profiles?.username}</p>
                                             <p className="text-xs text-zinc-400 font-medium">Verified Host</p>
                                         </div>
-                                        {isOwner && <Badge variant="outline" className="ml-auto border-orange-200 text-orange-600 bg-orange-50">You Own This Event</Badge>}
+                                        <div className="ml-auto flex gap-2">
+        <Button size="icon" variant="outline" className="rounded-full bg-white" onClick={() => onShare(selectedEvent)}>
+            <Share2 className="w-4 h-4"/>
+        </Button>
+        {isOwner && <Badge variant="outline" className="border-orange-200 text-orange-600 bg-orange-50">You Own This</Badge>}
+    </div>
                                     </div>
 
                                     {/* Date & Time Grid */}

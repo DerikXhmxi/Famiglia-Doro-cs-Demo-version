@@ -8,7 +8,8 @@ import {
   ChevronRight, ChevronLeft, Camera, Search, Mic, MapPin,
   PlusCircle, Ban, Check, LogOut, DollarSign,
   ArrowUpRight, ArrowDownLeft, Trash2, Loader2, Globe,
-  ShoppingBag, Ticket, Receipt
+  ShoppingBag, Ticket, Receipt,
+  TrendingUp
 } from 'lucide-react'
 
 import { Switch } from "@/components/ui/switch"
@@ -238,55 +239,144 @@ function MediaPreferences({ session }: { session: any }) {
 }
 
 // --- 6. MANAGE REVENUE ---
-function ManageRevenue({ session }: { session: any }) {
+ function ManageRevenue({ session }: { session: any }) {
     const [balance, setBalance] = useState(0.00)
     const [transactions, setTransactions] = useState<any[]>([])
     const [isWithdrawing, setIsWithdrawing] = useState(false)
 
     useEffect(() => {
-        const fetchFinancials = async () => {
-            const { data } = await supabase.from('transactions').select('*').eq('user_id', session.user.id).order('date', { ascending: false })
-            if (data) {
-                setTransactions(data)
-                const total = data.reduce((acc, curr) => curr.type === 'in' ? acc + curr.amount : acc - Math.abs(curr.amount), 0)
-                setBalance(total)
-            }
-        }
-        fetchFinancials()
-    }, [])
+        if (session?.user?.id) fetchFinancials()
+    }, [session?.user?.id])
+
+    const fetchFinancials = async () => {
+        // 1. Get Income (Sales where I am the seller)
+        const { data: orders } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('seller_id', session.user.id)
+            .eq('status', 'paid')
+            .order('created_at', { ascending: false })
+
+        // 2. Get Expenses (Withdrawals where I am the user)
+        const { data: payouts } = await supabase
+            .from('transactions')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .eq('type', 'out')
+            .order('created_at', { ascending: false })
+
+        // 3. Format & Merge Data
+        const incomeItems = orders?.map(o => ({
+            id: `sale-${o.id}`,
+            title: `Sold: ${o.item_name || 'Product'}`,
+            amount: parseFloat(o.amount),
+            date: o.created_at,
+            type: 'in'
+        })) || []
+
+        const expenseItems = payouts?.map(p => ({
+            id: `payout-${p.id}`,
+            title: p.title || 'Withdrawal',
+            amount: -Math.abs(parseFloat(p.amount)),
+            date: p.created_at,
+            type: 'out'
+        })) || []
+
+        // Combine and Sort by Date (Newest First)
+        const allActivity = [...incomeItems, ...expenseItems].sort((a, b) => 
+            new Date(b.date).getTime() - new Date(a.date).getTime()
+        )
+
+        setTransactions(allActivity)
+
+        // 4. Calculate Total Balance
+        const total = allActivity.reduce((acc, curr) => acc + curr.amount, 0)
+        setBalance(total)
+    }
 
     const handleWithdraw = async () => {
+        if (balance <= 0) return
         setIsWithdrawing(true)
+        
+        // Simulate processing delay
         await new Promise(r => setTimeout(r, 1500)) 
-        const { data } = await supabase.from('transactions').insert({ user_id: session.user.id, title: "Withdrawal to Bank", amount: -balance, type: 'out' }).select().single()
-        if (data) { setTransactions([data, ...transactions]); setBalance(0); alert("Funds withdrawn successfully!") }
+
+        // Insert Withdrawal Record
+        const { data, error } = await supabase.from('transactions')
+            .insert({ 
+                user_id: session.user.id, 
+                title: "Payout to Bank", 
+                amount: -balance, 
+                type: 'out' 
+            })
+            .select()
+            .single()
+
+        if (!error && data) { 
+            await fetchFinancials() // Refresh list
+            alert("Funds withdrawn successfully!") 
+        } else {
+            alert("Withdrawal failed")
+        }
         setIsWithdrawing(false)
     }
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-            <div className="bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600 rounded-3xl p-6 text-zinc-900 shadow-xl relative overflow-hidden">
+            {/* Balance Card */}
+            <div className="bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600 rounded-3xl p-8 text-zinc-900 shadow-xl relative overflow-hidden group">
+                <div className="absolute -right-10 -top-10 bg-white/20 w-40 h-40 rounded-full blur-3xl group-hover:bg-white/30 transition-all"/>
+                
                 <div className="relative z-10">
-                    <p className="text-sm font-bold opacity-80 mb-1 flex items-center gap-2"><DollarSign className="w-4 h-4"/> Total Balance</p>
-                    <h2 className="text-5xl font-black tracking-tight mb-6">${balance.toFixed(2)}</h2>
-                    <Button onClick={handleWithdraw} disabled={balance <= 0 || isWithdrawing} className="bg-black/90 hover:bg-black text-white rounded-xl w-full h-12 font-bold shadow-lg">
+                    <p className="text-sm font-bold opacity-80 mb-2 flex items-center gap-2">
+                        <DollarSign className="w-4 h-4"/> Available Balance
+                    </p>
+                    <h2 className="text-6xl font-black tracking-tighter mb-8">
+                        ${balance.toFixed(2)}
+                    </h2>
+                    <Button 
+                        onClick={handleWithdraw} 
+                        disabled={balance <= 0 || isWithdrawing} 
+                        className="bg-zinc-900/90 hover:bg-black text-white rounded-xl w-full h-14 text-lg font-bold shadow-lg transition-transform active:scale-[0.98]"
+                    >
                         {isWithdrawing ? <Loader2 className="animate-spin mr-2"/> : "Withdraw Funds"}
                     </Button>
                 </div>
             </div>
+
+            {/* Transactions List */}
             <div>
-                <h3 className="text-sm font-bold text-zinc-900 mb-4 ml-1">Recent Activity</h3>
-                <div className="bg-white border border-zinc-100 rounded-2xl overflow-hidden divide-y divide-zinc-50 shadow-sm">
-                    {transactions.length === 0 && <div className="p-6 text-center text-zinc-400 text-sm">No transactions yet.</div>}
-                    {transactions.map(tx => (
-                        <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-zinc-50 transition-colors">
-                            <div className="flex items-center gap-3">
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.type === 'in' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500'}`}>{tx.type === 'in' ? <ArrowDownLeft className="w-5 h-5"/> : <ArrowUpRight className="w-5 h-5"/>}</div>
-                                <div><p className="text-sm font-bold text-zinc-900">{tx.title}</p><p className="text-[10px] text-zinc-400">{new Date(tx.date).toLocaleDateString()}</p></div>
-                            </div>
-                            <span className={`text-sm font-bold ${tx.type === 'in' ? 'text-green-600' : 'text-zinc-900'}`}>{tx.type === 'in' ? '+' : '-'}${Math.abs(tx.amount).toFixed(2)}</span>
+                <div className="flex items-center justify-between mb-4 px-2">
+                    <h3 className="font-bold text-zinc-900">Recent Activity</h3>
+                    <span className="text-xs text-zinc-400">{transactions.length} transactions</span>
+                </div>
+                
+                <div className="bg-white border border-zinc-100 rounded-3xl overflow-hidden shadow-sm min-h-[200px]">
+                    {transactions.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-48 text-zinc-400 text-sm">
+                            <TrendingUp className="w-8 h-8 mb-2 opacity-20"/>
+                            No sales or withdrawals yet.
                         </div>
-                    ))}
+                    ) : (
+                        <div className="divide-y divide-zinc-50">
+                            {transactions.map(tx => (
+                                <div key={tx.id} className="p-5 flex items-center justify-between hover:bg-zinc-50 transition-colors group">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${tx.type === 'in' ? 'bg-green-100 text-green-600 group-hover:bg-green-200' : 'bg-red-50 text-red-500 group-hover:bg-red-100'}`}>
+                                            {tx.type === 'in' ? <ArrowDownLeft className="w-6 h-6"/> : <ArrowUpRight className="w-6 h-6"/>}
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-zinc-900 text-sm">{tx.title}</p>
+                                            <p className="text-xs text-zinc-400 font-medium">{new Date(tx.date).toLocaleDateString()} • {new Date(tx.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                                        </div>
+                                    </div>
+                                    <span className={`text-sm font-bold font-mono ${tx.type === 'in' ? 'text-green-600' : 'text-zinc-900'}`}>
+                                        {tx.type === 'in' ? '+' : ''}${Math.abs(tx.amount).toFixed(2)}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

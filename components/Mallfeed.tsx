@@ -31,7 +31,7 @@ type MallFeedProps = {
 function CartDrawer({ cart, onUpdateQty, onRemove, onCheckout }: { cart: any[], onUpdateQty: (id: number, delta: number) => void, onRemove: (id: number) => void, onCheckout: () => void }) {
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
     return (
-        <Sheet>
+        <Sheet> 
             <SheetTrigger asChild>
                 <Button variant="outline" className="relative rounded-full border-zinc-200 hover:border-yellow-400 hover:bg-yellow-50">
                     <ShoppingCart className="w-5 h-5 text-zinc-700" />
@@ -142,16 +142,34 @@ export default function MallFeed({ session, onChat, onShare, globalSearch = '', 
   const addToCart = (product: any) => { setCart(prev => { const existing = prev.find(p => p.id === product.id); if (existing) return prev.map(p => p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p); return [...prev, { ...product, quantity: 1 }] }); setAddedIds(prev => new Set(prev).add(product.id)); setTimeout(() => setAddedIds(prev => { const n = new Set(prev); n.delete(product.id); return n }), 2000) }
   const updateCartQty = (id: number, delta: number) => setCart(prev => prev.map(p => p.id === id ? { ...p, quantity: Math.max(1, p.quantity + delta) } : p)); const removeFromCart = (id: number) => setCart(prev => prev.filter(p => p.id !== id)); 
   const getMediaList = (product: any) => { const list = [{ type: 'image', url: product.image_url }]; if (product.video_url) list.unshift({ type: 'video', url: product.video_url }); return list }
-
+const handleCartCheckout = () => {
+      const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+      if (total === 0) return
+      
+      // Create a bundled item for the payment modal
+      const bundledItem = {
+          id: 0, // Placeholder ID for the whole cart
+          name: `Cart Checkout (${cart.length} items)`,
+          price: total,
+          description: cart.map(i => `${i.quantity}x ${i.name}`).join(', ')
+      }
+      
+      setCheckoutItem(bundledItem)
+  }
   return (
     <div className="space-y-6">
-        {checkoutItem && <PaymentModal isOpen={!!checkoutItem} onClose={() => setCheckoutItem(null)} item={checkoutItem} type="product" session={session} />}
+        {checkoutItem && <PaymentModal isOpen={!!checkoutItem} onClose={() => setCheckoutItem(null)} plan={checkoutItem} type="product" session={session} />}
 
         <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-3xl shadow-sm border border-zinc-100">
             <div className="relative w-full md:w-96"><Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" /><Input placeholder="Search products..." className="pl-9 bg-zinc-50 border-none rounded-full" value={localSearch} onChange={e => setLocalSearch(e.target.value)}/></div>
             <div className="flex items-center gap-3">
-                <CartDrawer cart={cart} onUpdateQty={updateCartQty} onRemove={removeFromCart} onCheckout={() => alert("Cart checkout coming soon")} />
-                <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+{/* CART DRAWER INTEGRATION */}
+                <CartDrawer 
+                    cart={cart} 
+                    onUpdateQty={updateCartQty} 
+                    onRemove={removeFromCart} 
+                    onCheckout={handleCartCheckout} // <--- CONNECTED HERE
+                />                <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                     <DialogTrigger asChild><Button className="rounded-full bg-zinc-900 hover:bg-black text-white"><Plus className="w-4 h-4 mr-2 text-yellow-400"/> Sell Item</Button></DialogTrigger>
                     <DialogContent>{success ? (<div className="h-[400px] flex flex-col items-center justify-center text-center"><div className="h-20 w-20 bg-green-100 rounded-full flex items-center justify-center mb-4"><CheckCircle className="w-10 h-10 text-green-600" /></div><h3 className="text-2xl font-bold">Listed!</h3></div>) : (<> <DialogHeader><DialogTitle>List a Product</DialogTitle></DialogHeader><div className="space-y-4 pt-4"><div className="flex gap-4"><div className={`flex-1 aspect-square rounded-xl border-2 ${previews.image ? 'border-solid border-yellow-400' : 'border-dashed border-zinc-200'} bg-zinc-50 relative overflow-hidden group`}>{previews.image ? <><img src={previews.image} className="w-full h-full object-cover" /><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"><Button size="icon" variant="destructive" onClick={() => clearFile('image')}><X className="w-4 h-4"/></Button></div></> : <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer"><ImageIcon className="w-8 h-8 text-zinc-300 mb-2"/><span className="text-xs font-bold text-zinc-500">Image</span><input type="file" accept="image/*" className="hidden" onChange={handleImageSelect} /></label>}</div><div className={`flex-1 aspect-square rounded-xl border-2 ${previews.video ? 'border-solid border-yellow-400' : 'border-dashed border-zinc-200'} bg-zinc-50 relative overflow-hidden group`}>{previews.video ? <><div className="w-full h-full bg-black flex items-center justify-center"><VideoIcon className="w-8 h-8 text-white" /></div><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"><Button size="icon" variant="destructive" onClick={() => clearFile('video')}><X className="w-4 h-4"/></Button></div></> : <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer"><UploadCloud className="w-8 h-8 text-zinc-300 mb-2"/><span className="text-xs font-bold text-zinc-500">Video</span><input type="file" accept="video/*" className="hidden" onChange={handleVideoSelect} /></label>}</div></div><Input placeholder="Product Name" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} className="focus-visible:ring-yellow-400"/><Textarea placeholder="Description..." value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} className="resize-none focus-visible:ring-yellow-400"/><div className="relative"><span className="absolute left-3 top-2.5 text-zinc-500 font-bold">$</span><Input type="number" placeholder="Price" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} className="pl-7 focus-visible:ring-yellow-400"/></div><Button onClick={handleCreate} disabled={uploading} className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold h-12">{uploading ? <Loader2 className="animate-spin"/> : "List Item"}</Button></div></>)}</DialogContent>
                 </Dialog>

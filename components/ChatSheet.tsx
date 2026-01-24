@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Send, Loader2, Lock, Globe, Users, Image as ImageIcon, X, Phone, Video, MoreVertical } from 'lucide-react'
 
-
+// (Keep FormattedMessage component same as provided before)
 const FormattedMessage = ({ text, isMe, onNavigate }: { text: string, isMe: boolean, onNavigate: (type: string, id: string) => void }) => {
     if (!text) return null;
     const urlRegex = /((?:https?:\/\/)[^\s]+)/g;
@@ -36,6 +36,7 @@ const FormattedMessage = ({ text, isMe, onNavigate }: { text: string, isMe: bool
         </span>
     );
 };
+
 type ChatSheetProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -43,31 +44,23 @@ type ChatSheetProps = {
   receiver?: any;
   group?: any;
   onCall?: (target: any, isVideo: boolean) => void;
-  onNavigate: (type: string, id: string) => void; // <--- Added here
+  onNavigate: (type: string, id: string) => void;
 }
-export default function ChatSheet({ 
-  isOpen, 
-  onClose, 
-  session, 
-  receiver, 
-  group,
-  onCall,
-  onNavigate // <--- Added here
-}:  
-  ChatSheetProps
-) {
+
+export default function ChatSheet({ isOpen, onClose, session, receiver, group, onCall, onNavigate }: ChatSheetProps) {
   const [messages, setMessages] = useState<any[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null)
+  
   const scrollRef = useRef<HTMLDivElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null) // Ensure ref is assigned
 
   useEffect(() => {
     if (!isOpen) return
     setMessages([]); setLoading(true)
     const fetchMessages = async () => {
-      let query = supabase.from('messages').select('*, profiles:sender_id(username, avatar_url)').order('created_at', { ascending: true }).limit(50)
+      let query = supabase.from('messages').select('*, profiles:sender_id(username, avatar_url)').order('created_at', { ascending: true })
       if (group?.id) query = query.eq('group_id', group.id)
       else if (receiver?.id) query = query.or(`and(sender_id.eq.${session.user.id},receiver_id.eq.${receiver.id}),and(sender_id.eq.${receiver.id},receiver_id.eq.${session.user.id})`)
       else query = query.is('receiver_id', null).is('group_id', null).is('stream_id', null)
@@ -101,10 +94,31 @@ export default function ChatSheet({
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0]; if (!file) return
-      const fileName = `chat/${Date.now()}_${file.name}`
+      
+      // Optimistic UI
+      const tempUrl = URL.createObjectURL(file)
+      setMessages(prev => [...prev, { 
+          id: Date.now(), 
+          content: "Sent an attachment", 
+          media_url: tempUrl, 
+          sender_id: session.user.id, 
+          profiles: { username: 'Me', avatar_url: session.user.user_metadata.avatar_url } 
+      }])
+
+      // Upload
+      const fileName = `chat/${Date.now()}_${file.name.replace(/\s/g, '')}`
       await supabase.storage.from('uploads').upload(fileName, file)
       const { data } = supabase.storage.from('uploads').getPublicUrl(fileName)
-      await supabase.from('messages').insert({ content: "Sent an attachment", media_url: data.publicUrl, sender_id: session.user.id, receiver_id: receiver?.id || null, group_id: group?.id || null, stream_id: null })
+      
+      // Send DB
+      await supabase.from('messages').insert({ 
+          content: "Sent an attachment", 
+          media_url: data.publicUrl, 
+          sender_id: session.user.id, 
+          receiver_id: receiver?.id || null, 
+          group_id: group?.id || null, 
+          stream_id: null 
+      })
   }
 
   return (
@@ -130,15 +144,10 @@ export default function ChatSheet({
                 )}
             </SheetTitle>
 
-            {/* --- ADDED CALL BUTTONS --- */}
             {receiver && onCall && (
                 <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-yellow-600" onClick={() => onCall(receiver, false)}>
-                        <Phone className="w-5 h-5"/>
-                    </Button>
-                    <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-yellow-600" onClick={() => onCall(receiver, true)}>
-                        <Video className="w-5 h-5"/>
-                    </Button>
+                    <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-yellow-600" onClick={() => onCall(receiver, false)}><Phone className="w-5 h-5"/></Button>
+                    <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-yellow-600" onClick={() => onCall(receiver, true)}><Video className="w-5 h-5"/></Button>
                     <Button variant="ghost" size="icon" className="text-zinc-400"><MoreVertical className="w-5 h-5"/></Button>
                 </div>
             )}
@@ -153,15 +162,17 @@ export default function ChatSheet({
                         <Avatar className="h-8 w-8 ring-2 ring-white"><AvatarImage src={msg.profiles?.avatar_url} /><AvatarFallback>U</AvatarFallback></Avatar>
                         <div className={`rounded-2xl px-4 py-2 max-w-[80%] text-sm shadow-sm ${isMe ? 'bg-zinc-900 text-white rounded-tr-none' : 'bg-white border border-zinc-100 text-zinc-800 rounded-tl-none'}`}>
                             {!isMe && <p className="text-[10px] text-zinc-400 font-bold mb-1">{msg.profiles?.username}</p>}
-                            <FormattedMessage 
-                                text={msg.content} 
-                                isMe={isMe} 
-                                onNavigate={(t, i) => {
-                                    onClose(); // Close the sheet
-                                    onNavigate(t, i); // Perform navigation
-                                }} 
-                            />
-                            {msg.media_url && <img src={msg.media_url} className="mt-2 rounded-lg max-h-40 cursor-pointer" onClick={() => setSelectedMedia(msg.media_url)} />}
+                            
+                            <FormattedMessage text={msg.content} isMe={isMe} onNavigate={(t, i) => { onClose(); onNavigate(t, i); }} />
+                            
+                            {/* --- MEDIA RENDERING FIX --- */}
+                            {msg.media_url && (
+                                <img 
+                                    src={msg.media_url} 
+                                    className="mt-2 rounded-lg max-h-40 w-full object-cover cursor-pointer border border-white/10" 
+                                    onClick={() => setSelectedMedia(msg.media_url)} 
+                                />
+                            )}
                         </div>
                     </div>
                 )
@@ -169,16 +180,20 @@ export default function ChatSheet({
         </div>
 
         <div className="p-4 bg-white border-t border-zinc-100 flex gap-2 items-center">
-            <input type="file" ref={fileInputRef} hidden onChange={handleFileUpload} />
-            <Button size="icon" variant="ghost" className="hover:bg-yellow-50" onClick={() => fileInputRef.current?.click()}><ImageIcon className="h-5 w-5 text-zinc-400 hover:text-yellow-600"/></Button>
+            {/* --- FILE INPUT LOGIC --- */}
+            <input type="file" ref={fileInputRef} hidden onChange={handleFileUpload} accept="image/*" />
+            <Button size="icon" variant="ghost" className="hover:bg-yellow-50" onClick={() => fileInputRef.current?.click()}>
+                <ImageIcon className="h-5 w-5 text-zinc-400 hover:text-yellow-600"/>
+            </Button>
+            
             <Input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type a message..." onKeyDown={(e) => e.key === 'Enter' && handleSend()} className="bg-zinc-50 border-zinc-100 rounded-full h-11 focus-visible:ring-yellow-400"/>
             <Button size="icon" className="rounded-full bg-yellow-400 hover:bg-yellow-500 h-11 w-11 shrink-0 text-black shadow-sm" onClick={handleSend}><Send className="h-4 w-4" /></Button>
         </div>
 
         {selectedMedia && (
-            <div className="absolute inset-0 z-50 bg-black flex items-center justify-center" onClick={() => setSelectedMedia(null)}>
-                <img src={selectedMedia} className="max-h-full max-w-full object-contain" onClick={(e) => e.stopPropagation()}/>
-                <button onClick={() => setSelectedMedia(null)} className="absolute top-4 right-4 bg-white/10 p-2 rounded-full text-white"><X/></button>
+            <div className="absolute inset-0 z-50 bg-black/90 flex items-center justify-center backdrop-blur-sm animate-in fade-in" onClick={() => setSelectedMedia(null)}>
+                <img src={selectedMedia} className="max-h-full max-w-full object-contain rounded-lg" onClick={(e) => e.stopPropagation()}/>
+                <button onClick={() => setSelectedMedia(null)} className="absolute top-4 right-4 bg-white/20 p-2 rounded-full text-white hover:bg-white/40"><X/></button>
             </div>
         )}
       </SheetContent>

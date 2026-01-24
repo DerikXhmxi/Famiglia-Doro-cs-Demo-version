@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
-import { Search, MessageSquare, Settings, LogOut, Home, Film, Users, Zap, Calendar, ShoppingBag, Grid, Tv, Phone, Video, Heart, Share2, MessageCircle, Play, Volume2, VolumeX, Trash2, HelpCircle } from "lucide-react"
+import { Search, MessageSquare, Settings, LogOut, Home, Film, Users, Zap, Calendar, ShoppingBag, Grid, Tv, Phone, Video, Heart, Share2, MessageCircle, Play, Volume2, VolumeX, Trash2, HelpCircle, Briefcase, Gamepad2 } from "lucide-react"
 
 // --- COMPONENT IMPORTS ---
 import AuthPage from '@/components/AuthPage'
@@ -71,6 +71,26 @@ const TOUR_STEPS: TourStep[] = [
         position: 'left'
     }
 ]
+
+
+function ComingSoon({ title, icon: Icon, description }: { title: string, icon: any, description: string }) {
+    return (
+        <div className="flex flex-col items-center justify-center h-[70vh] bg-white rounded-3xl border border-zinc-100 shadow-sm text-center p-8 animate-in fade-in zoom-in-95 duration-300">
+            <div className="w-24 h-24 bg-yellow-50 rounded-full flex items-center justify-center mb-6">
+                <Icon className="w-10 h-10 text-yellow-500" />
+            </div>
+            <h2 className="text-3xl font-black text-zinc-900 mb-2">{title}</h2>
+            <div className="flex items-center gap-2 mb-4">
+                <span className="px-3 py-1 bg-zinc-900 text-white text-[10px] font-bold uppercase tracking-wider rounded-full">Coming Soon</span>
+            </div>
+            <p className="text-zinc-500 max-w-md mx-auto leading-relaxed">{description}</p>
+            <div className="mt-8 flex gap-2">
+                {/* <Button variant="outline" className="rounded-full border-zinc-200">Notify Me</Button>
+                <Button className="rounded-full bg-zinc-900 text-white">Join Waitlist</Button> */}
+            </div>
+        </div>
+    )
+}
 // --- 1. VIDEO PLAYER HELPER (OUTSIDE) ---
 function CustomVideoPlayer({ src }: { src: string }) {
     const videoRef = useRef<HTMLVideoElement>(null)
@@ -371,7 +391,9 @@ const [isTourOpen, setIsTourOpen] = useState(false) // <--- TOUR STATE
               <NavItem icon={<ShoppingBag />} label={t('nav_mall')} active={activeTab === 'mall'} onClick={() => setActiveTab('mall')} />
               <NavItem icon={<Grid />} label={t('nav_suite')} active={activeTab === 'suite'} onClick={() => setActiveTab('suite')} />
               <NavItem icon={<Tv />} label={t('nav_tv')} active={activeTab === 'tv'} onClick={() => setActiveTab('tv')} />
-
+<div className="my-4 h-px bg-zinc-200/50 mx-4"></div>
+              <NavItem icon={<Briefcase />} label="Biz Networx" active={activeTab === 'biz'} onClick={() => setActiveTab('biz')} />
+              <NavItem icon={<Gamepad2 />} label="Kidz HQ" active={activeTab === 'kidz'} onClick={() => setActiveTab('kidz')} />
               <div className="pt-8">
                   <h3 className="px-4 text-xs font-semibold uppercase tracking-wider text-zinc-400">{t('nav_settings')}</h3>
                   <div className="mt-2 space-y-1">
@@ -394,6 +416,8 @@ const [isTourOpen, setIsTourOpen] = useState(false) // <--- TOUR STATE
                     <TabsTrigger value="mall" className="flex-1 min-w-[100px] data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all">{t('nav_mall')}</TabsTrigger>
                     <TabsTrigger value="suite" className="flex-1 min-w-[100px] data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all">{t('nav_suite')}</TabsTrigger>
                     <TabsTrigger value="tv" className="flex-1 min-w-[80px] data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all">{t('nav_tv')}</TabsTrigger>
+                 <TabsTrigger value="biz" className="flex-1 min-w-[80px] data-[state=active]:bg-yellow-400 data-[state=active]:text-black">Biz</TabsTrigger>
+                    <TabsTrigger value="kidz" className="flex-1 min-w-[80px] data-[state=active]:bg-yellow-400 data-[state=active]:text-black">Kidz</TabsTrigger>
                   </TabsList>
               )}
 
@@ -438,6 +462,21 @@ const [isTourOpen, setIsTourOpen] = useState(false) // <--- TOUR STATE
               <TabsContent value="chat"><ChatDashboard session={session} onCall={startCall} onNavigate={handleDeepLinkNavigation}/></TabsContent>
               <TabsContent value="suite"><SuiteHub session ={session} /></TabsContent>
               <TabsContent value="tv"><TvEmbed /></TabsContent>
+              <TabsContent value="biz">
+                  <ComingSoon 
+                    title="Biz Networx" 
+                    icon={Briefcase} 
+                    description="The ultimate professional network for Famiglia Oro creators. Connect with brands, find sponsorships, and manage your business portfolio." 
+                  />
+              </TabsContent>
+
+              <TabsContent value="kidz">
+                  <ComingSoon 
+                    title="Kidz HQ" 
+                    icon={Gamepad2} 
+                    description="A safe, fun, and interactive space for the younger generation. Games, educational content, and family-friendly entertainment." 
+                  />
+              </TabsContent>
             </Tabs>
           </main>
 
