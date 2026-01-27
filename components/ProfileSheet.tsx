@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation' // Added Router
 import { supabase } from '@/lib/supabase'
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -12,7 +13,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { 
   BadgeCheck, MapPin, Calendar, Loader2, Briefcase, Heart, Link as LinkIcon, 
   Instagram, Linkedin, Twitter, Grid, Film, Users, Trash2, QrCode, 
-  Edit3, Save, X, ShieldAlert, Camera, UserPlus, MessageCircle, UserCheck, Ban
+  Edit3, Save, X, ShieldAlert, Camera, UserPlus, MessageCircle, UserCheck, Ban,
+  Store, Building2, ArrowRight,
+  Plus
 } from 'lucide-react'
 
 // PROPS UPDATE: Added userId to allow viewing others
@@ -20,7 +23,7 @@ export default function ProfileSheet({
     isOpen, 
     onClose, 
     session,
-    userId, // The person we are looking at (Optional. If null, we view ourselves)
+    userId, 
     onProfileUpdate 
 }: { 
     isOpen: boolean, 
@@ -29,6 +32,7 @@ export default function ProfileSheet({
     userId?: string | null,
     onProfileUpdate?: () => void 
 }) {
+  const router = useRouter() // Initialize Router
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
@@ -42,6 +46,9 @@ export default function ProfileSheet({
   const [isFriend, setIsFriend] = useState(false)
   const [hasRequested, setHasRequested] = useState(false)
   
+  // NEW: State for Businesses
+  const [businesses, setBusinesses] = useState<any[]>([])
+
   // --- FORM STATE ---
   const [formData, setFormData] = useState<any>({})
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
@@ -59,12 +66,12 @@ export default function ProfileSheet({
 
   async function fetchAllData() {
     setLoading(true)
-    setIsEditing(false) // Reset edit mode when switching profiles
+    setIsEditing(false) 
 
     // 1. Fetch Profile
     const { data: profileData } = await supabase.from('profiles').select('*').eq('id', targetId).single()
     
-    // 2. Fetch Friends (of the target user)
+    // 2. Fetch Friends
     const { data: friendsData } = await supabase.from('friends')
         .select('*, user_a_profile:user_a(*), user_b_profile:user_b(*)')
         .or(`user_a.eq.${targetId},user_b.eq.${targetId}`)
@@ -80,13 +87,18 @@ export default function ProfileSheet({
         .eq('user_id', targetId)
         .order('created_at', { ascending: false })
 
+    // 5. NEW: Fetch Businesses Owned by Target User
+    const { data: businessData } = await supabase.from('businesses')
+        .select('*')
+        .eq('owner_id', targetId)
+        .order('created_at', { ascending: false })
+
     if (profileData) {
         setProfile(profileData)
         setFormData(profileData)
         setPreviewUrl(profileData.avatar_url)
     }
     
-    // Process Friends List
     const processedFriends = friendsData?.map((f: any) => {
         return f.user_a === targetId ? { ...f.user_b_profile, relationId: f.id } : { ...f.user_a_profile, relationId: f.id }
     }) || []
@@ -94,17 +106,15 @@ export default function ProfileSheet({
     setFriends(processedFriends)
     setGroups(groupsData?.map((g: any) => ({ ...g.groups, membershipId: g.id })) || [])
     setPosts(postsData || [])
+    setBusinesses(businessData || []) // Set Businesses
 
-    // 5. Check Relationship Status (If viewing someone else)
     if (!isOwner) {
-        // Are we friends?
         const { data: friendship } = await supabase.from('friends')
             .select('*')
             .or(`and(user_a.eq.${session.user.id},user_b.eq.${targetId}),and(user_a.eq.${targetId},user_b.eq.${session.user.id})`)
             .maybeSingle()
         setIsFriend(!!friendship)
 
-        // Did I send a request?
         if (!friendship) {
             const { data: req } = await supabase.from('friend_requests')
                 .select('*')
@@ -119,18 +129,10 @@ export default function ProfileSheet({
   }
 
   // --- HANDLERS ---
-
   const handleConnect = async () => {
-      if (isFriend) return // Already friends
-      
-      const { error } = await supabase.from('friend_requests').insert({
-          sender_id: session.user.id,
-          receiver_id: targetId
-      })
-      if (!error) {
-          setHasRequested(true)
-          alert("Friend request sent!")
-      }
+      if (isFriend) return 
+      const { error } = await supabase.from('friend_requests').insert({ sender_id: session.user.id, receiver_id: targetId })
+      if (!error) { setHasRequested(true); alert("Friend request sent!") }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -142,18 +144,16 @@ export default function ProfileSheet({
   }
 
   const handleSave = async () => {
-      if (!isOwner) return // Security check
+      if (!isOwner) return
       setSaving(true)
       try {
           let finalAvatarUrl = formData.avatar_url
-
           if (avatarFile) {
               const fileName = `avatars/${session.user.id}_${Date.now()}`
               await supabase.storage.from('uploads').upload(fileName, avatarFile)
               const { data } = supabase.storage.from('uploads').getPublicUrl(fileName)
               finalAvatarUrl = data.publicUrl
           }
-
           const { error } = await supabase.from('profiles').update({
               first_name: formData.first_name,
               last_name: formData.last_name,
@@ -168,24 +168,13 @@ export default function ProfileSheet({
               linkedin: formData.linkedin,
               avatar_url: finalAvatarUrl
           }).eq('id', session.user.id)
-
           if (error) throw error
-
-          await supabase.auth.updateUser({
-            data: { avatar_url: finalAvatarUrl, username: formData.username, full_name: `${formData.first_name} ${formData.last_name}` }
-          })
-
+          await supabase.auth.updateUser({ data: { avatar_url: finalAvatarUrl, username: formData.username, full_name: `${formData.first_name} ${formData.last_name}` } })
           setProfile({ ...formData, avatar_url: finalAvatarUrl })
           setIsEditing(false)
           setAvatarFile(null)
           if (onProfileUpdate) onProfileUpdate() 
-
-      } catch (err) {
-          console.error(err)
-          alert("Failed to save changes.")
-      } finally {
-          setSaving(false)
-      }
+      } catch (err) { console.error(err); alert("Failed to save changes.") } finally { setSaving(false) }
   }
 
   const deleteAccount = async () => {
@@ -203,7 +192,7 @@ export default function ProfileSheet({
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className="w-full sm:w-[600px] overflow-y-auto bg-zinc-50 p-0 border-l border-zinc-200">
         
-        {/* --- HERO SECTION --- */}
+        {/* HERO SECTION */}
         <div className="relative bg-white pb-6 border-b border-zinc-200">
             <div className="h-32 bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 w-full relative overflow-hidden">
                 <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
@@ -211,7 +200,6 @@ export default function ProfileSheet({
             </div>
             
             <div className="px-6 relative">
-                {/* Avatar */}
                 <div className="absolute -top-16 left-6 group">
                     <div className="relative">
                         <Avatar className="h-24 w-24 ring-4 ring-white shadow-lg bg-white">
@@ -228,10 +216,8 @@ export default function ProfileSheet({
                     </div>
                 </div>
 
-                {/* --- HEADER ACTIONS (DYNAMIC) --- */}
                 <div className="flex justify-end pt-4 gap-2">
                     {isOwner ? (
-                        // OWNER ACTIONS
                         isEditing ? (
                             <>
                                 <Button size="sm" variant="ghost" onClick={() => { setIsEditing(false); setFormData(profile); setPreviewUrl(profile.avatar_url); }}>Cancel</Button>
@@ -241,7 +227,6 @@ export default function ProfileSheet({
                             <Button size="sm" variant="outline" className="rounded-full" onClick={() => setIsEditing(true)}><Edit3 className="w-4 h-4 mr-2"/> Edit Profile</Button>
                         )
                     ) : (
-                        // VISITOR ACTIONS
                         <>
                             <Button size="sm" variant="outline" className="rounded-full border-zinc-300"><MessageCircle className="w-4 h-4 mr-2"/> Message</Button>
                             {isFriend ? (
@@ -255,7 +240,6 @@ export default function ProfileSheet({
                     )}
                 </div>
 
-                {/* Name & Bio */}
                 <div className="mt-4">
                     <h1 className="text-2xl font-black text-zinc-900 flex items-center gap-2">
                         {profile?.first_name} {profile?.last_name}
@@ -265,30 +249,30 @@ export default function ProfileSheet({
                     {!isEditing && profile?.bio && <p className="mt-3 text-zinc-700 text-sm leading-relaxed max-w-md">{profile.bio}</p>}
                 </div>
 
-                {/* Stats */}
                 <div className="flex gap-6 mt-6 border-t border-zinc-100 pt-4">
                     <div className="text-center"><div className="font-bold text-lg">{posts.length}</div><div className="text-xs text-zinc-400 uppercase">Posts</div></div>
                     <div className="text-center"><div className="font-bold text-lg">{friends.length}</div><div className="text-xs text-zinc-400 uppercase">Friends</div></div>
-                    <div className="text-center"><div className="font-bold text-lg">{groups.length}</div><div className="text-xs text-zinc-400 uppercase">Groups</div></div>
+                    <div className="text-center"><div className="font-bold text-lg">{businesses.length}</div><div className="text-xs text-zinc-400 uppercase">Pages</div></div>
                 </div>
             </div>
         </div>
 
-        {/* --- TABS SECTION --- */}
+        {/* TABS SECTION */}
         <div className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="w-full grid grid-cols-4 mb-6 h-12 bg-white border border-zinc-200 rounded-xl p-1 shadow-sm">
+                {/* Updated Grid for 5 tabs */}
+                <TabsList className="w-full grid grid-cols-5 mb-6 h-12 bg-white border border-zinc-200 rounded-xl p-1 shadow-sm">
                     <TabsTrigger value="about">About</TabsTrigger>
-                    <TabsTrigger value="content">Content</TabsTrigger>
-                    <TabsTrigger value="network">Network</TabsTrigger>
-                    <TabsTrigger value="id">QR Code</TabsTrigger>
+                    <TabsTrigger value="content">Posts</TabsTrigger>
+                    <TabsTrigger value="network">Friends</TabsTrigger>
+                    <TabsTrigger value="business">Pages</TabsTrigger> {/* NEW TAB */}
+                    <TabsTrigger value="id">ID</TabsTrigger>
                 </TabsList>
 
-                {/* TAB 1: ABOUT */}
+                {/* TAB 1: ABOUT (Same as before) */}
                 <TabsContent value="about" className="space-y-6">
                     {isEditing && isOwner ? (
                         <div className="space-y-4 animate-in fade-in">
-                            {/* ... EDIT FIELDS (Same as before) ... */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2"><label className="text-xs font-bold text-zinc-500">First Name</label><Input value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} /></div>
                                 <div className="space-y-2"><label className="text-xs font-bold text-zinc-500">Last Name</label><Input value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} /></div>
@@ -335,7 +319,7 @@ export default function ProfileSheet({
                     )}
                 </TabsContent>
 
-                {/* TAB 2: CONTENT */}
+                {/* TAB 2: CONTENT (Same as before) */}
                 <TabsContent value="content">
                     <div className="grid grid-cols-3 gap-2">
                         {posts.length === 0 ? <div className="col-span-3 py-10 text-center text-zinc-400"><Film className="w-10 h-10 mx-auto mb-2 opacity-20"/><p>No posts yet.</p></div> : 
@@ -352,7 +336,7 @@ export default function ProfileSheet({
                     </div>
                 </TabsContent>
 
-                {/* TAB 3: NETWORK */}
+                {/* TAB 3: NETWORK (Same as before) */}
                 <TabsContent value="network" className="space-y-6">
                     <div>
                         <h3 className="font-bold text-zinc-900 mb-3 flex items-center gap-2"><Users className="w-4 h-4"/> Friends ({friends.length})</h3>
@@ -365,7 +349,56 @@ export default function ProfileSheet({
                     </div>
                 </TabsContent>
 
-                {/* TAB 4: ID CARD & DANGER ZONE */}
+                {/* TAB 4: BUSINESSES (NEW) */}
+                <TabsContent value="business" className="space-y-4">
+                    <div className="flex justify-between items-center mb-2">
+                        <h3 className="font-bold text-zinc-900 flex items-center gap-2">
+                            <Store className="w-4 h-4"/> Business Pages
+                        </h3>
+                        {isOwner && (
+                            <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="h-8 text-xs rounded-full border-zinc-200"
+                                onClick={() => router.push('/business/create')}
+                            >
+                                <Plus className="w-3 h-3 mr-1"/> Create
+                            </Button>
+                        )}
+                    </div>
+
+                    {businesses.length === 0 ? (
+                        <div className="py-10 text-center text-zinc-400 bg-white rounded-2xl border border-dashed border-zinc-200">
+                            <Building2 className="w-10 h-10 mx-auto mb-2 opacity-20"/>
+                            <p className="text-sm">No business pages yet.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 gap-3">
+                            {businesses.map(biz => (
+                                <div 
+                                    key={biz.id} 
+                                    onClick={() => {
+                                        onClose() // Close sheet
+                                        router.push(`/business/${biz.id}`) // Navigate
+                                    }}
+                                    className="flex items-center gap-4 p-3 bg-white border border-zinc-200 rounded-xl cursor-pointer hover:shadow-md transition-all group"
+                                >
+                                    <Avatar className="w-12 h-12 rounded-lg border border-zinc-100">
+                                        <AvatarImage src={biz.logo_url} />
+                                        <AvatarFallback className="rounded-lg">{biz.name[0]}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-bold text-zinc-900 truncate">{biz.name}</h4>
+                                        <p className="text-xs text-zinc-500 truncate">@{biz.handle} • {biz.category}</p>
+                                    </div>
+                                    <ArrowRight className="w-4 h-4 text-zinc-300 group-hover:text-zinc-900 transition-colors"/>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </TabsContent>
+
+                {/* TAB 5: ID (Same as before) */}
                 <TabsContent value="id" className="space-y-6">
                     <div className="bg-zinc-900 text-white p-8 rounded-3xl flex flex-col items-center justify-center text-center shadow-xl relative overflow-hidden">
                         <div className="relative z-10 bg-white p-4 rounded-2xl shadow-lg mb-4">

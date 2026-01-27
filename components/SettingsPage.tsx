@@ -2,8 +2,113 @@
 
 import { useTranslation } from 'react-i18next';
 import { Check, ChevronLeft } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { EMOJI_PACKS } from '@/lib/emojiPacks' // Import the file we just made
+import {  Smile, Info } from 'lucide-react'
+import { supabase } from '@/lib/supabase';
 
+// --- NEW COMPONENT: EMOJI FREEDOM SETTINGS ---
+function EmojiSettings({ session }: { session: any }) {
+    const [activePack, setActivePack] = useState('classic')
+    const [loading, setLoading] = useState(false)
+
+    useEffect(() => {
+        const load = async () => {
+            const { data } = await supabase.from('profiles').select('active_emoji_pack').eq('id', session.user.id).single()
+            if (data?.active_emoji_pack && EMOJI_PACKS[data.active_emoji_pack]) {
+                setActivePack(data.active_emoji_pack)
+            }
+        }
+        load()
+    }, [])
+
+    const changePack = async (packId: string) => {
+        setActivePack(packId)
+        setLoading(true)
+        await supabase.from('profiles').update({ active_emoji_pack: packId }).eq('id', session.user.id)
+        setLoading(false)
+        // Note: In a real app, you might use React Context to update the feed immediately without reload
+    }
+
+    const currentPackData = EMOJI_PACKS[activePack]
+
+    return (
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 pb-10">
+            
+            {/* HEADER */}
+            <div className="bg-gradient-to-r from-yellow-400 to-orange-500 p-6 rounded-3xl text-white shadow-lg">
+                <h3 className="font-black text-2xl mb-2 flex items-center gap-2">
+                    <Smile className="w-8 h-8"/> Freedom of Emojis
+                </h3>
+                <p className="text-white/90 text-sm font-medium">
+                    Customize how you react to the world. Choose a pack that defines your style.
+                </p>
+            </div>
+
+            {/* PACK SELECTOR GRID */}
+            <div>
+                <h4 className="font-bold text-zinc-900 mb-4 text-sm uppercase tracking-wider ml-1">Select Your Vibe</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {Object.values(EMOJI_PACKS).map((pack) => (
+                        <div 
+                            key={pack.id} 
+                            onClick={() => changePack(pack.id)}
+                            className={`
+                                cursor-pointer relative p-4 rounded-2xl border-2 transition-all duration-200
+                                ${activePack === pack.id 
+                                    ? 'border-yellow-500 bg-yellow-50 shadow-md scale-[1.02]' 
+                                    : 'border-zinc-100 bg-white hover:border-zinc-200 hover:bg-zinc-50'
+                                }
+                            `}
+                        >
+                            <div className="flex justify-between items-start mb-2">
+                                <span className="font-bold text-zinc-900">{pack.name}</span>
+                                {activePack === pack.id && <div className="bg-yellow-500 text-white rounded-full p-1"><Check className="w-3 h-3"/></div>}
+                            </div>
+                            <p className="text-xs text-zinc-500 mb-4 line-clamp-1">{pack.description}</p>
+                            
+                            {/* Preview Icons */}
+                            <div className="flex gap-1">
+                                {pack.emojis.slice(0, 5).map(e => (
+                                    <span key={e.name} className="text-lg grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all">{e.icon}</span>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* GLOSSARY / MEANINGS LEGEND */}
+            <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-sm">
+                <div className="flex items-center gap-2 mb-6 border-b border-zinc-100 pb-4">
+                    <Info className="w-5 h-5 text-zinc-400"/>
+                    <div>
+                        <h4 className="font-bold text-zinc-900 text-sm">Pack Meanings: {currentPackData.name}</h4>
+                        <p className="text-xs text-zinc-400">What these symbols represent in this context.</p>
+                    </div>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-3">
+                    {currentPackData.emojis.map((item) => (
+                        <div key={item.name} className="flex items-center justify-between p-3 bg-zinc-50/50 hover:bg-zinc-50 rounded-2xl border border-zinc-100/50 hover:border-zinc-200 transition-colors">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-2xl shadow-sm border border-zinc-100">
+                                    {item.icon}
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="font-bold text-zinc-900 text-sm">{item.name}</span>
+                                </div>
+                            </div>
+                            <span className="text-xs font-medium text-zinc-500 bg-white px-3 py-1 rounded-full border border-zinc-100 shadow-sm">
+                                {item.meaning}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    )
+}
 // Common Internet Languages List
 const LANGUAGES = [
     { code: 'en', name: 'English (US)', flag: '🇺🇸' },

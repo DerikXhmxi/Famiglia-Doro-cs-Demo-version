@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Search, MessageSquare, Settings, LogOut, Home, Film, Users, Zap, Calendar, ShoppingBag, Grid, Tv, Phone, Video, Heart, Share2, MessageCircle, Play, Volume2, VolumeX, Trash2, HelpCircle, Briefcase, Gamepad2 } from "lucide-react"
-
+import { useEmojiSystem } from '@/lib/useEmojiSystem' // <--- IMPORT THE HOOK
 // --- COMPONENT IMPORTS ---
 import AuthPage from '@/components/AuthPage'
 import CreatePost from '@/components/CreatePost'
@@ -113,7 +113,9 @@ function CustomVideoPlayer({ src }: { src: string }) {
 }
 
 // --- 2. REAL POSTS FEED (OUTSIDE PAGE COMPONENT - CRITICAL FIX) ---
-function RealPostsFeed({ session, onShare, deepLink ,onViewProfile }: { session: any, onShare: (post: any) => void, deepLink?: string | null,onViewProfile: (id: string) => void  }) {
+function RealPostsFeed(
+  { session, onShare, deepLink ,onViewProfile , userMode }:
+   { session: any, onShare: (post: any) => void, deepLink?: string | null,onViewProfile: (id: string) => void ,userMode: string  }) {
   const { t } = useTranslation()
   const [posts, setPosts] = useState<any[]>([])
   const [expandedPostId, setExpandedPostId] = useState<number | null>(null)
@@ -165,6 +167,7 @@ function RealPostsFeed({ session, onShare, deepLink ,onViewProfile }: { session:
       return () => { clearInterval(interval); clearTimeout(timeout) }
   }, [deepLink])
 
+  const { currentPack } = useEmojiSystem(session?.user?.id)
   useEffect(() => {
     fetchPosts()
     const channel = supabase.channel('posts_feed').on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => fetchPosts()).subscribe()
@@ -172,9 +175,44 @@ function RealPostsFeed({ session, onShare, deepLink ,onViewProfile }: { session:
   }, [])
 
   async function fetchPosts() {
-    const { data } = await supabase.from('posts').select(`*, profiles(username, avatar_url), post_likes(user_id), post_comments(count)`).order('created_at', { ascending: false }).limit(20)
-    if (data) setPosts(data.map(p => ({ ...p, isLiked: p.post_likes.some((l: any) => l.user_id === session.user.id), likeCount: p.post_likes.length, commentCount: p.post_comments[0].count })))
-  }
+    const { data } = await supabase
+        .from('posts')
+        .select(`
+            *, 
+            profiles(username, avatar_url), 
+            post_likes(user_id),             
+            post_reactions(emoji, user_id),   
+            post_comments(count)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(20)
+
+    if (data) {
+        setPosts(data.map(p => {
+            // 1. LIKE LOGIC (The Heart)
+            const isLiked = p.post_likes.some((l: any) => l.user_id === session.user.id)
+            const likeCount = p.post_likes.length
+
+            // 2. REACTION LOGIC (The Emojis)
+            const myReaction = p.post_reactions.find((r: any) => r.user_id === session.user.id)?.emoji
+            
+            // Group distinct reactions for display (e.g., 🦁 x3, 🔥 x2)
+            const reactionCounts = p.post_reactions.reduce((acc: any, curr: any) => {
+                acc[curr.emoji] = (acc[curr.emoji] || 0) + 1
+                return acc
+            }, {})
+
+            return { 
+                ...p, 
+                isLiked,        // Boolean: Have I liked it?
+                likeCount,      // Number: Total hearts
+                myReaction,     // String: My emoji (if any)
+                reactionCounts, // Object: { '🦁': 2, '🔥': 5 }
+                commentCount: p.post_comments[0].count 
+            }
+        }))
+    }
+      }
 
   const handleDeletePost = async (postId: number) => {
       if(!confirm("Delete post?")) return
@@ -212,8 +250,34 @@ function RealPostsFeed({ session, onShare, deepLink ,onViewProfile }: { session:
       setCommentText(''); setPosts(prev => prev.map(p => p.id === post.id ? { ...p, commentCount: p.commentCount + 1 } : p))
   }
 
-  const handleReaction = async (emoji: string, postId: number) => {
-      await supabase.from('post_reactions').insert({ post_id: postId, user_id: session.user.id, emoji: emoji })
+ const handleReaction = async (emoji: string, postId: number) => {
+      // 1. Optimistic Update (Instant UI feedback)
+      setPosts(prev => prev.map(p => {
+          if (p.id !== postId) return p
+          
+          // If clicking the SAME emoji -> Toggle OFF
+          if (p.myReaction === emoji) {
+              return { ...p, myReaction: null, likeCount: Math.max(0, p.likeCount - 1) }
+          }
+          // If switching emoji -> Switch it (count stays same unless it was null before)
+          const newCount = p.myReaction ? p.likeCount : p.likeCount + 1
+          return { ...p, myReaction: emoji, likeCount: newCount }
+      }))
+
+      // 2. Database Update
+      // Check if we are removing or adding
+      const currentPost = posts.find(p => p.id === postId)
+      if (currentPost?.myReaction === emoji) {
+          // Remove reaction
+           await supabase.from('post_reactions').delete().match({ post_id: postId, user_id: session.user.id })
+      } else {
+          // Upsert (Insert or Update if exists) - Requires the SQL constraint from Step 1
+          await supabase.from('post_reactions').upsert({ 
+              post_id: postId, 
+              user_id: session.user.id, 
+              emoji: emoji 
+          }, { onConflict: 'user_id, post_id' })
+      }
   }
 
   return (
@@ -227,14 +291,60 @@ function RealPostsFeed({ session, onShare, deepLink ,onViewProfile }: { session:
           </div>
           <div className="px-5 pb-3"><p className="text-zinc-700">{post.content}</p></div>
           {post.media_url && <div className="w-full bg-black flex justify-center">{post.media_type === 'video' ? <CustomVideoPlayer src={post.media_url} /> : <img src={post.media_url} className="max-h-[500px] object-contain" />}</div>}
-          <div className="px-4 pb-2"><ReactionDock onReact={(emoji) => handleReaction(emoji, post.id)} variant="inline" /></div>
-          <div className="px-5 py-4 border-t border-zinc-50 flex justify-between">
-              <div className="flex gap-4">
-                  <button onClick={() => handleLike(post)} className={`flex items-center gap-2 text-sm font-medium ${post.isLiked ? 'text-red-500' : 'text-zinc-500'}`}><Heart className={`h-5 w-5 ${post.isLiked ? 'fill-current' : ''}`} /> {t('post_like')}</button>
-                  <button onClick={() => toggleComments(post.id)} className="flex items-center gap-2 text-zinc-500 text-sm font-medium"><MessageCircle className="h-5 w-5" /> {t('post_comment')}</button>
-              </div>
-              <button onClick={() => onShare(post)} className="text-zinc-400 hover:text-zinc-600 transition-colors flex items-center gap-1"><Share2 className="h-5 w-5" /> {t('post_share')}</button>
-          </div>
+          <div className="px-4 pb-2">
+       
+            </div>
+         {/* --- ACTION BAR --- */}
+<div className="px-5 py-4 border-t border-zinc-50 flex items-center justify-between">
+    
+    <div className="flex gap-4">
+        {/* 1. LIKE BUTTON (Heart) */}
+        <button 
+            onClick={() => handleLike(post)} 
+            className={`flex items-center gap-2 text-sm font-medium transition-colors ${post.isLiked ? 'text-red-500' : 'text-zinc-500 hover:text-red-500'}`}
+        >
+            <Heart className={`h-5 w-5 ${post.isLiked ? 'fill-current' : ''}`} /> 
+            <span>{post.likeCount > 0 ? post.likeCount : 'Like'}</span>
+        </button>
+
+        {/* 2. REACTION DOCK (Smile) */}
+        <div className="flex items-center gap-2">
+            <ReactionDock 
+                onReact={(emoji) => handleReaction(emoji, post.id)} 
+                variant="inline" 
+                activePack={currentPack} // Pass the user's active pack ID string
+                currentReaction={post.myReaction}
+            />
+
+            {/* VISUAL REACTION DISPLAY (Tiny Icons) */}
+            {post.reactionCounts && Object.keys(post.reactionCounts).length > 0 && (
+                <div className="flex -space-x-1 ml-2">
+                    {Object.entries(post.reactionCounts).slice(0, 4).map(([emoji, count]: any) => (
+                        <div key={emoji} className="bg-zinc-50 rounded-full border border-white w-6 h-6 flex items-center justify-center text-xs shadow-sm z-10" title={`${count} reactions`}>
+                            {emoji}
+                        </div>
+                    ))}
+                    {Object.keys(post.reactionCounts).length > 4 && (
+                        <div className="bg-zinc-100 rounded-full border border-white w-6 h-6 flex items-center justify-center text-[9px] font-bold text-zinc-500 z-0">
+                            +
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+
+        {/* 3. COMMENT BUTTON */}
+        <button onClick={() => toggleComments(post.id)} className="flex items-center gap-2 text-zinc-500 text-sm font-medium hover:text-zinc-900">
+            <MessageCircle className="h-5 w-5" />
+            <span className="hidden sm:inline">Comment</span>
+        </button>
+    </div>
+
+    {/* SHARE BUTTON */}
+    <button onClick={() => onShare(post)} className="text-zinc-400 hover:text-zinc-600">
+        <Share2 className="h-5 w-5" />
+    </button>
+</div>
           {expandedPostId === post.id && (
               <div className="bg-zinc-50 p-4 border-t border-zinc-100">
                   <div className="space-y-3 mb-4 max-h-60 overflow-y-auto">
@@ -243,7 +353,9 @@ function RealPostsFeed({ session, onShare, deepLink ,onViewProfile }: { session:
                   <div className="flex gap-2"><input className="flex-1 bg-white border border-zinc-200 rounded-full px-4 py-2 text-sm" placeholder="Write a comment..." value={commentText} onChange={e => setCommentText(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleComment(post)} /><Button size="sm" onClick={() => handleComment(post)} className="rounded-full bg-zinc-900 text-white hover:bg-black">Post</Button></div>
               </div>
           )}
+          
         </div>
+        
       ))}
     </div>
   )
@@ -288,7 +400,7 @@ export default function Page() {
   const [globalSearch, setGlobalSearch] = useState('')
   const [searchResults, setSearchResults] = useState<any>({ products: [], events: [], people: [], groups: [] })
   const [showDropdown, setShowDropdown] = useState(false)
-  
+  const [activeEmojiPack, setActiveEmojiPack] = useState('classic')
   // UI States
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isChatOpen, setIsChatOpen] = useState(false)
@@ -311,6 +423,14 @@ const [isTourOpen, setIsTourOpen] = useState(false) // <--- TOUR STATE
         if (session) {
             setSession(session)
             // Auth check logic (omitted for brevity, keep your existing logic here)
+             // Inside your auth useEffect
+supabase.from('profiles')
+    .select('active_emoji_pack')
+    .eq('id', session.user.id)
+    .single()
+    .then(({ data }) => {
+        if (data?.active_emoji_pack) setActiveEmojiPack(data.active_emoji_pack)
+    })
             setLoading(false)
         } else { setLoading(false) }
     })
@@ -433,6 +553,7 @@ const handleViewProfile = (id: string) => {
                     onShare={(post) => handleOpenShare('post', post)} 
                     deepLink={deepLink?.type === 'post' ? deepLink.id : null}
                     onViewProfile={handleViewProfile}
+                    userMode={activeEmojiPack}
                   />
               </TabsContent>
               

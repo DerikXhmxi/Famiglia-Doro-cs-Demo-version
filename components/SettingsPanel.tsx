@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
+import { EmojiProvider } from '@/components/EmojiContext' // <--- IMPORT THIS
+import { useEmoji } from '@/components/EmojiContext' 
+
 import '@/lib/i18n'
 import {
   X, Eye, Bell, Lock, Wifi, CreditCard, Users, FileText,
@@ -9,15 +12,24 @@ import {
   PlusCircle, Ban, Check, LogOut, DollarSign,
   ArrowUpRight, ArrowDownLeft, Trash2, Loader2, Globe,
   ShoppingBag, Ticket, Receipt,
-  TrendingUp
+  TrendingUp,
+  Badge,
+  Plus
+} from 'lucide-react'
+import { 
+  // ... existing imports ...
+  Smile // Add this
 } from 'lucide-react'
 
+// Import EMOJI_PACKS if it's in a separate file, or ensure it's defined above.
+import { EMOJI_PACKS } from '@/lib/emojiPacks'
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTranslation } from 'react-i18next'
-
+import PaymentModal from '@/components/PaymentModal' // Ensure this path is correct
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 // INTERNAL CUSTOM MODAL ---
 function CustomModal({ isOpen, onClose, title, children }: { isOpen: boolean, onClose: () => void, title: string, children: React.ReactNode }) {
     if (!isOpen) return null;
@@ -71,6 +83,211 @@ function VisibilitySettings({ session }: { session: any }) {
   )
 }
 
+// --- 10. FREEDOM OF EMOJI SPEECH ---
+// --- 10. FREEDOM OF EMOJI SPEECH (FIXED & UNLOCKED) ---
+// --- 10. FREEDOM OF EMOJI SPEECH (FIXED) ---
+// 1. IMPORT THE HOOK (Check your path, likely components or lib)
+// OR import { useEmoji } from '@/lib/EmojiContext' depending on where you saved it
+
+// --- 10. FREEDOM OF EMOJI SPEECH (CONNECTED TO GLOBAL CONTEXT) ---
+function EmojiSettings({ session }: { session: any }) {
+    // 2. USE THE GLOBAL CONTEXT (This is the magic link to Home Feed)
+    const { activePackId, allPacks, setPack, refreshCustomPacks } = useEmoji()
+    
+    const [userTier, setUserTier] = useState('free') 
+    const [showUpgrade, setShowUpgrade] = useState(false)
+    const [isCreating, setIsCreating] = useState(false)
+    
+    // Create Pack Form State
+    const [newPack, setNewPack] = useState({ 
+        name: '', 
+        description: '', 
+        emojis: [{ icon: '😎', name: 'Cool', meaning: 'Chilling' }] 
+    })
+
+    const PREMIUM_PLAN = {
+        id: 'sub_premium',
+        name: 'Famiglia Premium',
+        price: 9.99,
+        description: 'Unlock all emoji packs, create custom reactions, and get verified.'
+    }
+
+    // Load User Tier only (Packs are already loaded by Context)
+    useEffect(() => {
+        const fetchTier = async () => {
+            const { data } = await supabase.from('profiles').select('badge_tier').eq('id', session.user.id).single()
+            if (data) setUserTier(data.badge_tier || 'free')
+        }
+        fetchTier()
+    }, [])
+
+    // --- ACTIONS ---
+
+    // 3. THIS UPDATES THE HOME PAGE INSTANTLY
+    const handleSelectPack = (packId: string) => {
+        setPack(packId) 
+    }
+
+    const handleCreatePack = async () => {
+        if (!newPack.name || newPack.emojis.length === 0) return alert("Pack needs a name and at least one emoji.")
+        
+        const { data, error } = await supabase.from('custom_emoji_packs').insert({
+            user_id: session.user.id,
+            name: newPack.name,
+            description: newPack.description,
+            emojis: newPack.emojis
+        }).select().single()
+
+        if (error) return alert("Error creating pack")
+
+        if (data) {
+            await refreshCustomPacks() // Tell global context to fetch the new pack
+            setPack(data.id) // Automatically select it
+            setIsCreating(false)
+            setNewPack({ name: '', description: '', emojis: [{ icon: '', name: '', meaning: '' }] }) 
+        }
+    }
+
+    // --- FORM HELPERS ---
+    const addEmojiRow = () => setNewPack({ ...newPack, emojis: [...newPack.emojis, { icon: '', name: '', meaning: '' }] })
+    const updateEmojiRow = (index: number, field: string, value: string) => {
+        const updated = [...newPack.emojis]
+        updated[index] = { ...updated[index], [field]: value }
+        setNewPack({ ...newPack, emojis: updated })
+    }
+    const removeEmojiRow = (index: number) => {
+        setNewPack({ ...newPack, emojis: newPack.emojis.filter((_, i) => i !== index) })
+    }
+
+    // --- RENDER HELPERS ---
+    const hasAccess = ['premium', 'gold', 'vip'].includes(userTier)
+    
+    const isLocked = (packId: string, isCustom: boolean) => {
+        if (isCustom) return false 
+        if (packId === 'classic') return false
+        return !hasAccess
+    }
+
+    // 4. USE 'allPacks' FROM CONTEXT (This includes standard + your custom ones)
+    const packsList = Object.values(allPacks)
+
+    return (
+        <>
+            {showUpgrade && (
+                <div className="relative z-[9999]">
+                    <PaymentModal 
+                        isOpen={showUpgrade} 
+                        onClose={() => { setShowUpgrade(false); setUserTier('premium'); }} 
+                        plan={PREMIUM_PLAN} 
+                        type="subscription"
+                        session={session} 
+                    />
+                </div>
+            )}
+
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+                <div className="bg-zinc-900 p-6 rounded-3xl border border-zinc-800 shadow-xl">
+                    {/* HEADER & CREATE BUTTON */}
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg">
+                                <Smile className="w-6 h-6 text-white" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-white">Freedom of Emoji Speech</h3>
+                                <p className="text-xs text-zinc-400">Select your dialect or create your own.</p>
+                            </div>
+                        </div>
+                        
+                        {hasAccess ? (
+                            <Dialog open={isCreating} onOpenChange={setIsCreating}>
+                                <DialogTrigger asChild>
+                                    <Button size="sm" className="bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl border border-zinc-700">
+                                        <Plus className="w-4 h-4 mr-2"/> Create Pack
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-md bg-white rounded-3xl max-h-[85vh] overflow-y-auto z-[250]">
+                                    <DialogHeader><DialogTitle>Create Custom Pack</DialogTitle></DialogHeader>
+                                    <div className="space-y-4 pt-4">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-zinc-500 uppercase">Pack Name</label>
+                                            <Input placeholder="e.g. My Slang" value={newPack.name} onChange={e => setNewPack({...newPack, name: e.target.value})} className="rounded-xl"/>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-zinc-500 uppercase">Description</label>
+                                            <Input placeholder="Short description..." value={newPack.description} onChange={e => setNewPack({...newPack, description: e.target.value})} className="rounded-xl"/>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-zinc-500 uppercase flex justify-between"><span>Emojis</span><span className="text-zinc-400 cursor-pointer hover:text-black" onClick={addEmojiRow}>+ Add Row</span></label>
+                                            <div className="space-y-2 bg-zinc-50 p-2 rounded-xl border border-zinc-100 max-h-60 overflow-y-auto">
+                                                {newPack.emojis.map((emoji, idx) => (
+                                                    <div key={idx} className="flex gap-2 items-center">
+                                                        <Input placeholder="👋" className="w-14 text-center text-lg rounded-lg" maxLength={2} value={emoji.icon} onChange={e => updateEmojiRow(idx, 'icon', e.target.value)} />
+                                                        <Input placeholder="Name" className="flex-1 text-xs rounded-lg" value={emoji.name} onChange={e => updateEmojiRow(idx, 'name', e.target.value)} />
+                                                        <button onClick={() => removeEmojiRow(idx)} className="text-red-400 hover:text-red-600"><X className="w-4 h-4"/></button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <Button onClick={handleCreatePack} className="w-full bg-black text-white rounded-xl h-12 font-bold">Save Pack</Button>
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+                        ) : (
+                            <Badge  className="border-zinc-700 text-zinc-500">Free Tier</Badge>
+                        )}
+                    </div>
+
+                    {/* PACKS GRID */}
+                    <div className="grid grid-cols-1 gap-4">
+                        {packsList.map((pack: any) => {
+                            const locked = isLocked(pack.id, pack.isCustom)
+                            // 5. COMPARE WITH CONTEXT STATE
+                            const isActive = activePackId === pack.id
+
+                            return (
+                                <div 
+                                    key={pack.id}
+                                    onClick={() => !locked && handleSelectPack(pack.id)}
+                                    className={`relative p-4 rounded-2xl border transition-all duration-300 group
+                                        ${isActive ? 'bg-zinc-800 border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.2)]' : 'bg-zinc-800/50 border-zinc-700 hover:bg-zinc-800'}
+                                        ${locked ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer'}
+                                    `}
+                                >
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="font-bold text-white text-sm">{pack.name}</span>
+                                                {pack.isCustom && <Badge className="bg-indigo-500 text-white text-[9px] px-1.5 h-4">Custom</Badge>}
+                                                {isActive && <Badge className="bg-yellow-500 text-black text-[10px] hover:bg-yellow-400">Active</Badge>}
+                                                {locked && <Badge className="border-red-500 text-red-500 text-[10px] gap-1"><Lock className="w-3 h-3"/> Premium</Badge>}
+                                            </div>
+                                            <p className="text-[11px] text-zinc-400 leading-snug line-clamp-1">{pack.description || "Custom user pack."}</p>
+                                        </div>
+                                        <div className="flex -space-x-2 pl-4">
+                                            {pack.emojis.slice(0, 3).map((e: any, i: number) => (
+                                                <div key={i} className="w-8 h-8 rounded-full bg-zinc-700 border-2 border-zinc-800 flex items-center justify-center text-sm shadow-sm z-10">{e.icon}</div>
+                                            ))}
+                                            {pack.emojis.length > 3 && <div className="w-8 h-8 rounded-full bg-zinc-900 border-2 border-zinc-800 flex items-center justify-center text-[9px] text-zinc-500 z-0">+{pack.emojis.length - 3}</div>}
+                                        </div>
+                                    </div>
+                                    {isActive && <div className="absolute inset-0 border-2 border-yellow-500 rounded-2xl pointer-events-none animate-pulse opacity-20"></div>}
+                                </div>
+                            )
+                        })}
+                    </div>
+                    
+                    {!hasAccess && (
+                        <div className="mt-6 p-4 bg-gradient-to-r from-red-900/50 to-zinc-900 border border-red-900/50 rounded-xl text-center">
+                            <p className="text-xs text-red-200 mb-3 font-medium">Upgrade to unlock all packs & create your own!</p>
+                            <Button variant="destructive" size="sm" className="w-full text-xs font-bold h-9 bg-red-600 hover:bg-red-500" onClick={() => setShowUpgrade(true)}>Upgrade Membership - $9.99</Button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </>
+    )
+}
 // --- 2. LANGUAGE SETTINGS ---
 function LanguageSettings() {
     const { i18n, t } = useTranslation(); // Use the hook
@@ -587,6 +804,7 @@ export default function SettingsPanel({
   /* 🔑 IMPORTANT FIX — menuItems MUST be memoized */
   const menuItems = useMemo(() => [
     { id: 'visibility', label: t('set_visibility'), icon: Eye, component: () => <VisibilitySettings session={session} /> },
+    { id: 'emojis', label: "Freedom of Emoji Speech", icon: Smile, component: () => <EmojiSettings session={session} /> },
     { id: 'language', label: t('set_language'), icon: Globe, component: () => <LanguageSettings /> },
     { id: 'notifications', label: t('set_notifications'), icon: Bell, component: () => <NotificationSettings session={session} /> },
     { id: 'permissions', label: t('set_permissions'), icon: Lock, component: () => <PermissionsSettings session={session} /> },

@@ -25,7 +25,10 @@ type MallFeedProps = {
     onShare: (item: any) => void;
     globalSearch?: string;
     deepLink?: string | null;
+    businessId?: string; // <--- Added this
 }
+
+
 
 // --- CART DRAWER ---
 function CartDrawer({ cart, onUpdateQty, onRemove, onCheckout }: { cart: any[], onUpdateQty: (id: number, delta: number) => void, onRemove: (id: number) => void, onCheckout: () => void }) {
@@ -43,14 +46,20 @@ function CartDrawer({ cart, onUpdateQty, onRemove, onCheckout }: { cart: any[], 
                 <div className="flex-1 overflow-y-auto py-4 space-y-4">
                     {cart.length === 0 && <div className="text-center text-zinc-400 mt-20 flex flex-col items-center"><ShoppingBag className="w-12 h-12 opacity-20 mb-2"/>Cart is empty</div>}
                     {cart.map((item) => (
-                        <div key={item.id} className="flex gap-4 items-center bg-zinc-50 p-3 rounded-2xl">
+                        <div key={item.cart_id} className="flex gap-4 items-center bg-zinc-50 p-3 rounded-2xl">
                             <img src={item.image_url} className="w-20 h-20 rounded-xl object-cover bg-white shadow-sm" />
                             <div className="flex-1 min-w-0">
                                 <p className="font-bold text-sm line-clamp-1">{item.name}</p>
                                 <p className="text-zinc-500 text-xs mb-2">${item.price} each</p>
-                                <div className="flex items-center gap-2"><Button size="icon" variant="outline" className="h-6 w-6 rounded-full" onClick={() => onUpdateQty(item.id, -1)} disabled={item.quantity <= 1}><Minus className="w-3 h-3"/></Button><span className="text-sm font-bold w-4 text-center">{item.quantity}</span><Button size="icon" variant="outline" className="h-6 w-6 rounded-full" onClick={() => onUpdateQty(item.id, 1)}><Plus className="w-3 h-3"/></Button></div>
+                                <div className="flex items-center gap-2">
+                                    {/* FIX: Passing item.cart_id instead of item.id */}
+                                    <Button size="icon" variant="outline" className="h-6 w-6 rounded-full" onClick={() => onUpdateQty(item.cart_id, -1)} disabled={item.quantity <= 1}><Minus className="w-3 h-3"/></Button>
+                                    <span className="text-sm font-bold w-4 text-center">{item.quantity}</span>
+                                    <Button size="icon" variant="outline" className="h-6 w-6 rounded-full" onClick={() => onUpdateQty(item.cart_id, 1)}><Plus className="w-3 h-3"/></Button>
+                                </div>
                             </div>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-red-400 hover:bg-red-50 hover:text-red-600" onClick={() => onRemove(item.id)}><Trash2 className="w-4 h-4"/></Button>
+                            {/* FIX: Passing item.cart_id */}
+                            <Button size="icon" variant="ghost" className="h-8 w-8 text-red-400 hover:bg-red-50 hover:text-red-600" onClick={() => onRemove(item.cart_id)}><Trash2 className="w-4 h-4"/></Button>
                         </div>
                     ))}
                 </div>
@@ -63,7 +72,8 @@ function CartDrawer({ cart, onUpdateQty, onRemove, onCheckout }: { cart: any[], 
     )
 }
 
-export default function MallFeed({ session, onChat, onShare, globalSearch = '', deepLink }: MallFeedProps) {  
+
+export default function MallFeed({ session, onChat, onShare, globalSearch = '', deepLink  , businessId}: MallFeedProps) {  
   const [products, setProducts] = useState<any[]>([])
   const [cart, setCart] = useState<any[]>([])
   const [localSearch, setLocalSearch] = useState('')
@@ -77,6 +87,25 @@ export default function MallFeed({ session, onChat, onShare, globalSearch = '', 
   const [addedIds, setAddedIds] = useState<Set<number>>(new Set())
   const [checkoutItem, setCheckoutItem] = useState<any>(null)
 
+  async function fetchCart() {
+      if (!session?.user?.id) return;
+      
+      const { data, error } = await supabase
+          .from('cart_items')
+          .select('id, quantity, product:products(*)') // Join with products table
+          .eq('user_id', session.user.id)
+      
+      if (data) {
+          // Transform DB data to match UI structure
+          const formattedCart = data.map((item: any) => ({
+              ...item.product,      // Spread product details (name, price, image, etc.)
+              cart_id: item.id,     // Store the cart_items primary key for updates
+              quantity: item.quantity
+          }))
+          setCart(formattedCart)
+      }
+  }
+
   // --- DEEP LINK HANDLER ---
   useEffect(() => {
       if (deepLink) {
@@ -87,14 +116,22 @@ export default function MallFeed({ session, onChat, onShare, globalSearch = '', 
                   setActiveMediaIndex(0)
               }
           }
-          fetchLinkedProduct()
+          fetchLinkedProduct();
+          
       }
   }, [deepLink])
 
-  useEffect(() => { fetchProducts(); const channel = supabase.channel('mall_realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => fetchProducts()).subscribe(); return () => { supabase.removeChannel(channel) } }, [globalSearch])
+  useEffect(() => {
+     fetchProducts()
+     fetchCart() 
+       const channel = supabase.channel('mall_realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => fetchProducts()).subscribe(); return () => { supabase.removeChannel(channel) } }, [globalSearch])
   
   async function fetchProducts() { 
       let query = supabase.from('products').select('*, profiles(id, username, avatar_url)').order('created_at', { ascending: false });
+  
+  if (businessId) {
+          query = query.eq('business_id', businessId)
+      }
       if(globalSearch) query = query.ilike('name', `%${globalSearch}%`);
       const { data } = await query; 
       if (data) setProducts(data) 
@@ -125,6 +162,15 @@ export default function MallFeed({ session, onChat, onShare, globalSearch = '', 
               const { data: vidData } = supabase.storage.from('uploads').getPublicUrl(vidName); 
               videoUrl = vidData.publicUrl; 
           } 
+          const payload: any = { 
+              seller_id: session.user.id, 
+              name: newProduct.name, 
+              description: newProduct.description, 
+              price: parseFloat(newProduct.price), 
+              image_url: imgData.publicUrl, 
+              video_url: videoUrl 
+          }
+          if (businessId) payload.business_id = businessId
           const { error: dbError } = await supabase.from('products').insert({ seller_id: session.user.id, name: newProduct.name, description: newProduct.description, price: parseFloat(newProduct.price), image_url: imgData.publicUrl, video_url: videoUrl }); 
           if (dbError) throw dbError; 
           setUploading(false); setSuccess(true); 
@@ -138,9 +184,56 @@ export default function MallFeed({ session, onChat, onShare, globalSearch = '', 
       setProducts(prev => prev.filter(p => p.id !== id));
       if(selectedProduct?.id === id) setSelectedProduct(null);
   }
+const addToCart = async (product: any) => {
+      // 1. Optimistic UI update (optional, but feels faster)
+      setAddedIds(prev => new Set(prev).add(product.id)); 
+      
+      // 2. Check if item exists in user's cart in DB
+      const { data: existing } = await supabase
+          .from('cart_items')
+          .select('id, quantity')
+          .eq('user_id', session.user.id)
+          .eq('product_id', product.id)
+          .single()
 
-  const addToCart = (product: any) => { setCart(prev => { const existing = prev.find(p => p.id === product.id); if (existing) return prev.map(p => p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p); return [...prev, { ...product, quantity: 1 }] }); setAddedIds(prev => new Set(prev).add(product.id)); setTimeout(() => setAddedIds(prev => { const n = new Set(prev); n.delete(product.id); return n }), 2000) }
-  const updateCartQty = (id: number, delta: number) => setCart(prev => prev.map(p => p.id === id ? { ...p, quantity: Math.max(1, p.quantity + delta) } : p)); const removeFromCart = (id: number) => setCart(prev => prev.filter(p => p.id !== id)); 
+      if (existing) {
+          // Update Quantity
+          await supabase
+              .from('cart_items')
+              .update({ quantity: existing.quantity + 1 })
+              .eq('id', existing.id)
+      } else {
+          // Insert New Item
+          await supabase
+              .from('cart_items')
+              .insert({ user_id: session.user.id, product_id: product.id, quantity: 1 })
+      }
+
+      // 3. Refresh Cart State from DB
+      await fetchCart()
+      
+      setTimeout(() => setAddedIds(prev => { const n = new Set(prev); n.delete(product.id); return n }), 2000) 
+  }
+const updateCartQty = async (cartItemId: number, delta: number) => {
+      // Find current qty locally to calculate new qty
+      const item = cart.find(c => c.cart_id === cartItemId)
+      if(!item) return
+
+      const newQty = Math.max(1, item.quantity + delta)
+      
+      // Update DB
+      await supabase.from('cart_items').update({ quantity: newQty }).eq('id', cartItemId)
+      
+      // Refresh
+      fetchCart()
+  }  
+  const removeFromCart = async (cartItemId: number) => {
+      // Delete from DB
+      await supabase.from('cart_items').delete().eq('id', cartItemId)
+      // Refresh
+      fetchCart()
+  }
+
   const getMediaList = (product: any) => { const list = [{ type: 'image', url: product.image_url }]; if (product.video_url) list.unshift({ type: 'video', url: product.video_url }); return list }
 const handleCartCheckout = () => {
       const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
@@ -163,7 +256,7 @@ const handleCartCheckout = () => {
         <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-3xl shadow-sm border border-zinc-100">
             <div className="relative w-full md:w-96"><Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" /><Input placeholder="Search products..." className="pl-9 bg-zinc-50 border-none rounded-full" value={localSearch} onChange={e => setLocalSearch(e.target.value)}/></div>
             <div className="flex items-center gap-3">
-{/* CART DRAWER INTEGRATION */}
+                {/* CART DRAWER INTEGRATION */}
                 <CartDrawer 
                     cart={cart} 
                     onUpdateQty={updateCartQty} 

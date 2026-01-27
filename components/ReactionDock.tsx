@@ -1,70 +1,92 @@
 "use client"
 
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
+import { Smile } from 'lucide-react'
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { EmojiPack } from '@/lib/emojiPacks' // Import types
 
-const REACTION_EMOJIS = [
-  { id: 'laugh', icon: '😆' },
-  { id: 'sus', icon: '🤨' },
-  { id: 'neutral', icon: '😐' },
-  { id: 'kiss', icon: '😘' },
-  { id: 'love_hands', icon: '🫶' },
-  { id: 'fire', icon: '🔥' },
-  { id: 'angry', icon: '🤬' },
-  { id: 'love', icon: '😍' },
-  { id: 'party', icon: '🥳' },
-  { id: 'zipper', icon: '🤐' },
-  { id: 'salute', icon: '🫡' },
-  { id: 'hug', icon: '🫂' },
-  { id: 'shock', icon: '😱' },
-]
+interface ReactionDockProps {
+    onReact: (emoji: string) => void;
+    variant?: 'inline' | 'floating';
+    currentReaction?: string | null;
+    
+    // NEW PROP: Pass the actual pack object, not just an ID
+    activePack: EmojiPack; 
+}
 
-export default function ReactionDock({ onReact, variant = "floating" }: { onReact: (emoji: string) => void, variant?: "floating" | "inline" }) {
-  const [activeEmoji, setActiveEmoji] = useState<string | null>(null)
+export default function ReactionDock({ 
+    onReact, 
+    variant = 'inline', 
+    currentReaction = null,
+    activePack // <--- Use this
+}: ReactionDockProps) {
+    const [isOpen, setIsOpen] = useState(false)
 
-  const handleReact = (emoji: string) => {
-    setActiveEmoji(emoji)
-    onReact(emoji)
-    setTimeout(() => setActiveEmoji(null), 1000)
-  }
+    // Safety fallback
+    const packToRender = activePack || { name: 'Loading...', emojis: [] }
 
-  return (
-    <div className={`relative z-50 ${variant === 'floating' ? 'w-full flex justify-center mb-4' : 'my-2'}`}>
-      
-      {/* Flying Particle Animation */}
-      <AnimatePresence>
-        {activeEmoji && (
-          <motion.div
-            initial={{ y: 0, opacity: 1, scale: 1 }}
-            animate={{ y: -100, opacity: 0, scale: 3 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8 }}
-            className="absolute -top-10 left-1/2 -translate-x-1/2 pointer-events-none text-6xl"
-          >
-            {activeEmoji}
-          </motion.div>
-        )}
-      </AnimatePresence>
+    return (
+        <Popover open={isOpen} onOpenChange={setIsOpen}>
+            <PopoverTrigger asChild>
+                <button 
+                    className={`
+                        group flex items-center gap-2 transition-colors font-medium text-sm
+                        ${variant === 'floating' ? 'bg-white/90 backdrop-blur shadow-lg px-4 py-2 rounded-full' : ''}
+                        ${currentReaction ? 'text-yellow-600' : 'text-zinc-500 hover:text-yellow-600'}
+                    `}
+                >
+                    {/* ICON LOGIC */}
+                    {currentReaction ? (
+                        <span className="text-xl scale-110">{currentReaction}</span>
+                    ) : (
+                        <Smile className={`w-5 h-5 ${isOpen ? 'text-yellow-500 fill-current' : ''}`} />
+                    )}
+                    
+                    {/* TEXT LOGIC */}
+                    <span className={currentReaction ? "font-bold" : ""}>
+                        {currentReaction ? 'Reacted' : (packToRender.id === 'classic' ? 'Like' : 'React')}
+                    </span>
+                </button>
+            </PopoverTrigger>
+            
+            <PopoverContent 
+                side="top" 
+                align="start" 
+                className="w-80 p-0 bg-white shadow-2xl border border-zinc-200 rounded-2xl overflow-hidden z-50"
+            >
+                {/* Header */}
+                <div className="px-4 py-2 bg-zinc-50 border-b border-zinc-100 text-xs font-bold text-zinc-400 uppercase tracking-wider flex justify-between">
+                    <span>{packToRender.name} Pack</span>
+                </div>
 
-      {/* The Dock Bar */}
-      <div className={`
-        flex items-center gap-1 overflow-x-auto py-2 px-3 scrollbar-hide
-        ${variant === 'floating' 
-          ? 'bg-black/60 backdrop-blur-xl rounded-full border border-white/10 max-w-[90%] mx-auto shadow-2xl' 
-          : 'bg-transparent w-full'}
-      `}>
-        {REACTION_EMOJIS.map((item) => (
-          <motion.button
-            key={item.id}
-            whileHover={{ scale: 1.5, translateY: -5 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={(e) => { e.stopPropagation(); handleReact(item.icon); }}
-            className="text-2xl min-w-[36px] h-[36px] flex items-center justify-center cursor-pointer select-none hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]"
-          >
-            {item.icon}
-          </motion.button>
-        ))}
-      </div>
-    </div>
-  )
+                {/* Grid */}
+                <div className="grid grid-cols-6 gap-2 p-3 max-h-[280px] overflow-y-auto custom-scrollbar">
+                    {packToRender.emojis.map((item, index) => (
+                        <motion.button
+                            key={index}
+                            initial={{ opacity: 0, scale: 0.5 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: index * 0.01 }}
+                            onClick={() => {
+                                onReact(item.icon);
+                                setIsOpen(false);
+                            }}
+                            className={`
+                                relative group w-10 h-10 flex items-center justify-center text-xl rounded-xl transition-all
+                                ${currentReaction === item.icon ? 'bg-yellow-100 border-2 border-yellow-400 scale-110' : 'hover:bg-zinc-100 hover:scale-110'}
+                            `}
+                        >
+                            {item.icon}
+                            
+                            {/* Tooltip */}
+                            <span className="absolute -top-12 left-1/2 -translate-x-1/2 bg-zinc-900 text-white text-[10px] px-2 py-1 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                                {item.name}: <span className="opacity-70">{item.meaning}</span>
+                            </span>
+                        </motion.button>
+                    ))}
+                </div>
+            </PopoverContent>
+        </Popover>
+    )
 }
