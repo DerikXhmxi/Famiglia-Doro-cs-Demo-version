@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useTranslation } from 'react-i18next' // <--- IMPORT THIS
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -52,7 +53,7 @@ export default function ChatSheet({ isOpen, onClose, session, receiver, group, o
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null)
-  
+  const { t } = useTranslation() // <--- HOOK
   const scrollRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null) // Ensure ref is assigned
 
@@ -129,17 +130,17 @@ export default function ChatSheet({ isOpen, onClose, session, receiver, group, o
                 {group ? (
                    <>
                     <Avatar className="h-9 w-9"><AvatarImage src={group.image_url} /><AvatarFallback>G</AvatarFallback></Avatar>
-                    <div className="flex flex-col items-start"><span className="text-zinc-900 font-bold">{group.name}</span><span className="text-[10px] text-zinc-400 font-normal flex items-center gap-1"><Users className="w-3 h-3 text-yellow-500"/> Group Chat</span></div>
+                    <div className="flex flex-col items-start"><span className="text-zinc-900 font-bold">{group.name}</span><span className="text-[10px] text-zinc-400 font-normal flex items-center gap-1"><Users className="w-3 h-3 text-yellow-500"/> {t('groupChat')}</span></div>
                    </>
                 ) : receiver ? (
                   <>
                     <Avatar className="h-9 w-9"><AvatarImage src={receiver.avatar_url} /><AvatarFallback>U</AvatarFallback></Avatar>
-                    <div className="flex flex-col items-start"><span className="text-zinc-900 font-bold">{receiver.username}</span><span className="text-[10px] text-zinc-400 font-normal flex items-center gap-1"><Lock className="w-3 h-3 text-yellow-500"/> Private Chat</span></div>
+                    <div className="flex flex-col items-start"><span className="text-zinc-900 font-bold">{receiver.username}</span><span className="text-[10px] text-zinc-400 font-normal flex items-center gap-1"><Lock className="w-3 h-3 text-yellow-500"/>{t('privateChat')}</span></div>
                   </>
                 ) : (
                   <>
                     <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                    <div className="flex flex-col items-start"><span className="text-zinc-900 font-bold">Global Live Chat</span><span className="text-[10px] text-zinc-400 font-normal flex items-center gap-1"><Globe className="w-3 h-3 text-yellow-500"/> Public Room</span></div>
+                    <div className="flex flex-col items-start"><span className="text-zinc-900 font-bold">{t('globalLiveChat')}</span><span className="text-[10px] text-zinc-400 font-normal flex items-center gap-1"><Globe className="w-3 h-3 text-yellow-500"/>{t('publicRoom')}</span></div>
                   </>
                 )}
             </SheetTitle>
@@ -186,7 +187,7 @@ export default function ChatSheet({ isOpen, onClose, session, receiver, group, o
                 <ImageIcon className="h-5 w-5 text-zinc-400 hover:text-yellow-600"/>
             </Button>
             
-            <Input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type a message..." onKeyDown={(e) => e.key === 'Enter' && handleSend()} className="bg-zinc-50 border-zinc-100 rounded-full h-11 focus-visible:ring-yellow-400"/>
+            <Input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder={t('typeMessage')} onKeyDown={(e) => e.key === 'Enter' && handleSend()} className="bg-zinc-50 border-zinc-100 rounded-full h-11 focus-visible:ring-yellow-400"/>
             <Button size="icon" className="rounded-full bg-yellow-400 hover:bg-yellow-500 h-11 w-11 shrink-0 text-black shadow-sm" onClick={handleSend}><Send className="h-4 w-4" /></Button>
         </div>
 

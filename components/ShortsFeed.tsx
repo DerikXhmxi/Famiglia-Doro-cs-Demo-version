@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import ReactionDock from './ReactionDock' 
+import { useEmojiSystem } from '@/lib/useEmojiSystem'
 
 // --- TYPE DEFINITIONS ---
 type ShortItemProps = {
@@ -122,6 +123,8 @@ function ShortItem({ short, session, onDelete, onShare }: ShortItemProps) {
         }
     }
 
+        const { currentPack } = useEmojiSystem(session?.user?.id)
+    
     return (
         <div id={`short-${short.id}`} className="relative w-full h-full snap-start flex items-center justify-center bg-black border-b border-zinc-900 overflow-hidden group">
             {/* VIDEO PLAYER */}
@@ -154,7 +157,7 @@ function ShortItem({ short, session, onDelete, onShare }: ShortItemProps) {
                 </div>
 
                 <div className="pointer-events-auto">
-                    <ReactionDock onReact={handleReaction} variant="floating" />
+                    <ReactionDock activePack={currentPack} onReact={handleReaction} variant="floating" />
                 </div>
             </div>
 

@@ -803,18 +803,18 @@ export default function SettingsPanel({
 
   /* 🔑 IMPORTANT FIX — menuItems MUST be memoized */
   const menuItems = useMemo(() => [
-    { id: 'visibility', label: t('set_visibility'), icon: Eye, component: () => <VisibilitySettings session={session} /> },
+    { id: 'visibility', label: t('myVisibility'), icon: Eye, component: () => <VisibilitySettings session={session} /> },
     { id: 'emojis', label: "Freedom of Emoji Speech", icon: Smile, component: () => <EmojiSettings session={session} /> },
-    { id: 'language', label: t('set_language'), icon: Globe, component: () => <LanguageSettings /> },
-    { id: 'notifications', label: t('set_notifications'), icon: Bell, component: () => <NotificationSettings session={session} /> },
-    { id: 'permissions', label: t('set_permissions'), icon: Lock, component: () => <PermissionsSettings session={session} /> },
+    { id: 'language', label: t('language'), icon: Globe, component: () => <LanguageSettings /> },
+    { id: 'notifications', label: t('notifications'), icon: Bell, component: () => <NotificationSettings session={session} /> },
+    { id: 'permissions', label: t('permissions'), icon: Lock, component: () => <PermissionsSettings session={session} /> },
     { id: 'media', label: t('set_media'), icon: Wifi, component: () => <MediaPreferences session={session} /> },
-    { id: 'revenue', label: t('set_revenue'), icon: DollarSign, component: () => <ManageRevenue session={session} /> },
+    { id: 'revenue', label: t('manageRevenu'), icon: DollarSign, component: () => <ManageRevenue session={session} /> },
     { id: 'history', label: t('set_history'), icon: Receipt, component: () => <PurchaseHistory session={session} /> },
-    { id: 'cards', label: t('set_cards'), icon: CreditCard, component: () => <MyCards session={session} /> },
-    { id: 'privacy', label: t('set_privacy'), icon: Lock, component: () => <div className="p-10 text-center text-zinc-400">Privacy Policy</div> },
-    { id: 'licenses', label: t('set_licenses'), icon: FileText, component: () => <div className="p-10 text-center text-zinc-400">MIT License</div> },
-    { id: 'blocked', label: t('set_blocked'), icon: Users, component: () => <BlockedUsers session={session} /> },
+    { id: 'cards', label: t('myCards'), icon: CreditCard, component: () => <MyCards session={session} /> },
+    { id: 'privacy', label: t('privacy'), icon: Lock, component: () => <div className="p-10 text-center text-zinc-400">Privacy Policy</div> },
+    { id: 'licenses', label: t('licenses'), icon: FileText, component: () => <div className="p-10 text-center text-zinc-400">MIT License</div> },
+    { id: 'blocked', label: t('blockedUsers'), icon: Users, component: () => <BlockedUsers session={session} /> },
   ], [t, i18n.language, session])
 
   const ActiveComponent =

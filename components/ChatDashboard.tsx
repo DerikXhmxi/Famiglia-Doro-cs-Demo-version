@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { useTranslation } from 'react-i18next' // <--- IMPORT THIS
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Search, Send, Image as ImageIcon, MoreVertical, Phone, Video, Loader2, Globe, Users, MessageCircle, X } from 'lucide-react'
 
@@ -72,7 +73,7 @@ export default function ChatDashboard({ session, onCall, onNavigate }: ChatDashb
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
     const [selectedMedia, setSelectedMedia] = useState<string | null>(null) // New State for Lightbox
-    
+    const { t } = useTranslation()
     // Refs
     const scrollRef = useRef<HTMLDivElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null) // New Ref for File Upload
@@ -232,21 +233,21 @@ export default function ChatDashboard({ session, onCall, onNavigate }: ChatDashb
 
             <div className="w-80 border-r border-zinc-100 flex flex-col bg-zinc-50/50">
                 <div className="p-4 space-y-4">
-                    <h2 className="text-xl font-bold px-2 text-zinc-900">Messages</h2>
-                    <div className="relative"><Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" /><Input placeholder="Search..." className="pl-9 bg-white border-none shadow-sm rounded-xl" value={search} onChange={(e) => setSearch(e.target.value)}/></div>
+                    <h2 className="text-xl font-bold px-2 text-zinc-900">{t('messages_header')}</h2>
+                    <div className="relative"><Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" /><Input placeholder={t('search_chats')} className="pl-9 bg-white border-none shadow-sm rounded-xl" value={search} onChange={(e) => setSearch(e.target.value)}/></div>
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                         <TabsList className="w-full bg-zinc-200/50 p-1 rounded-xl grid grid-cols-3">
-                            <TabsTrigger value="direct" className="rounded-lg text-[10px] font-bold">Direct</TabsTrigger>
-                            <TabsTrigger value="groups" className="rounded-lg text-[10px] font-bold">Groups</TabsTrigger>
-                            <TabsTrigger value="global" className="rounded-lg text-[10px] font-bold">Global</TabsTrigger>
+                            <TabsTrigger value="direct" className="rounded-lg text-[10px] font-bold">{t('direct')}</TabsTrigger>
+                            <TabsTrigger value="groups" className="rounded-lg text-[10px] font-bold">{t('groups')}</TabsTrigger>
+                            <TabsTrigger value="global" className="rounded-lg text-[10px] font-bold">{t('global')}</TabsTrigger>
                         </TabsList>
                     </Tabs>
                 </div>
                 <div className="flex-1 overflow-y-auto custom-scrollbar pt-2 px-2">
                     {loading && <div className="flex justify-center p-4"><Loader2 className="animate-spin text-zinc-300"/></div>}
-                    {activeTab === 'direct' && (filteredDirect.length > 0 ? filteredDirect.map(t => (<ThreadItem key={t.id} item={t} active={activeThread?.id === t.id} onClick={() => setActiveThread(t)} icon={MessageCircle} />)) : !loading && <div className="text-center text-xs text-zinc-400 mt-10">No chats found.</div>)}
-                    {activeTab === 'groups' && (filteredGroups.length > 0 ? filteredGroups.map(t => (<ThreadItem key={t.id} item={t} active={activeThread?.id === t.id} onClick={() => setActiveThread(t)} icon={Users} />)) : !loading && <div className="text-center text-xs text-zinc-400 mt-10">No groups joined.</div>)}
-                    {activeTab === 'global' && (<ThreadItem item={{ name: 'Global Public Chat', type: 'global', lastMsg: 'Chat with everyone!' }} active={activeThread?.type === 'global'} onClick={() => setActiveThread({ id: 'global', name: 'Global Chat', type: 'global', image: null })} icon={Globe}/>)}
+                    {activeTab === 'direct' && (filteredDirect.length > 0 ? filteredDirect.map(t => (<ThreadItem key={t.id} item={t} active={activeThread?.id === t.id} onClick={() => setActiveThread(t)} icon={MessageCircle} />)) : !loading && <div className="text-center text-xs text-zinc-400 mt-10">{t('noChatsFound')}</div>)}
+                    {activeTab === 'groups' && (filteredGroups.length > 0 ? filteredGroups.map(t => (<ThreadItem key={t.id} item={t} active={activeThread?.id === t.id} onClick={() => setActiveThread(t)} icon={Users} />)) : !loading && <div className="text-center text-xs text-zinc-400 mt-10">{t('noGroupsJoined')}</div>)}
+                    {activeTab === 'global' && (<ThreadItem item={{ name: t('globalChat'), type: 'global', lastMsg: t('chatWithEveryone') }} active={activeThread?.type === 'global'} onClick={() => setActiveThread({ id: 'global', name:t('globalChat'), type: 'global', image: null })} icon={Globe}/>)}
                 </div>
             </div>
 
@@ -287,14 +288,14 @@ export default function ChatDashboard({ session, onCall, onNavigate }: ChatDashb
                             <input type="file" ref={fileInputRef} hidden onChange={handleFileUpload} accept="image/*" />
                             <Button size="icon" variant="ghost" className="text-zinc-400 hover:bg-zinc-50 rounded-full" onClick={() => fileInputRef.current?.click()}><ImageIcon className="w-5 h-5"/></Button>
                             
-                            <Input placeholder="Type a message..." className="bg-zinc-50 border-none rounded-full h-11 focus-visible:ring-1 focus-visible:ring-yellow-400" value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()} />
+                            <Input placeholder={t('typeMessage')} className="bg-zinc-50 border-none rounded-full h-11 focus-visible:ring-1 focus-visible:ring-yellow-400" value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()} />
                             <Button onClick={sendMessage} size="icon" className="rounded-full bg-yellow-400 hover:bg-yellow-500 text-black h-11 w-11 shadow-sm transition-transform active:scale-95"><Send className="w-4 h-4"/></Button>
                         </div>
                     </>
                 ) : (
                     <div className="flex-1 flex flex-col items-center justify-center text-zinc-300 bg-zinc-50/30">
                         <div className="w-20 h-20 bg-zinc-100 rounded-full flex items-center justify-center mb-6"><MessageCircle className="w-10 h-10 text-zinc-300" /></div>
-                        <p className="text-lg font-bold text-zinc-800">Your Messages</p><p className="text-sm text-zinc-400 mt-2">Select a friend or chat to start</p>
+                        <p className="text-lg font-bold text-zinc-800">{t('yourMessages')}</p><p className="text-sm text-zinc-400 mt-2">{t('selectChatToStart')}</p>
                     </div>
                 )}
             </div>

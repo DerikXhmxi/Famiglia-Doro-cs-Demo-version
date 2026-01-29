@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import { Plus, Trash2, Clock, Loader2, CheckCircle2, X } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import ReactionDock from './ReactionDock' // Ensure this component exists
+import { useEmojiSystem } from '@/lib/useEmojiSystem'
 
 function formatTimeAgo(dateString: string) {
   const diff = (new Date().getTime() - new Date(dateString).getTime()) / 1000
@@ -19,6 +20,8 @@ export default function StoriesFeed({ user }: { user: any }) {
     const [viewingStory, setViewingStory] = useState<any>(null)
     const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success'>('idle')
 
+        const { currentPack } = useEmojiSystem(user?.id)
+    
     useEffect(() => {
         const fetchStories = async () => {
             // Fetch stories from last 24 hours
@@ -126,7 +129,7 @@ export default function StoriesFeed({ user }: { user: any }) {
 
                             {/* REACTION DOCK (FLOATING BOTTOM) */}
                             <div className="absolute bottom-6 left-0 right-0 z-30 px-4">
-                                <ReactionDock onReact={(emoji) => handleReaction(story.id, emoji)} variant="floating" />
+                                <ReactionDock activePack={currentPack} onReact={(emoji) => handleReaction(story.id, emoji)} variant="floating" />
                             </div>
 
                             {/* HEADER OVERLAY (User Info, Time, Close/Delete) */}
