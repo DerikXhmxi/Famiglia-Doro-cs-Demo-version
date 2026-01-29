@@ -2,18 +2,18 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { 
-    ExternalLink, Video, Palette, Map, Globe, Shield, Box, 
-    LayoutGrid, X, Maximize, Tv, Film, School, Award, 
-    Cpu, Bot, HeartHandshake, Briefcase, DollarSign, 
-    Music, Mic, Trophy, HelpCircle, Gamepad2, Navigation, 
+import {
+    ExternalLink, Video, Palette, Map, Globe, Shield, Box,
+    LayoutGrid, X, Maximize, Tv, Film, School, Award,
+    Cpu, Bot, HeartHandshake, Briefcase, DollarSign,
+    Music, Mic, Trophy, HelpCircle, Gamepad2, Navigation,
     CheckCircle2, Coins, Disc, Headphones, Activity, Search,
     Lock
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { supabase } from "@/lib/supabase" 
+import { supabase } from "@/lib/supabase"
 import SubscriptionPlans from "./SubscriptionPlan"
 
 const TIER_LEVELS: Record<string, number> = {
@@ -23,43 +23,117 @@ const TIER_LEVELS: Record<string, number> = {
 
 const SUITE_APPS = [
     // FREE (Tier 1)
-    { name: "Google", icon: <LayoutGrid className="w-6 h-6"/>, color: "bg-green-500", url: "https://google.com", embed: false, minTier: 1 },
-    { name: "Save Schools", icon: <School className="w-6 h-6"/>, color: "bg-black", url: "#", embed: true, minTier: 1 },
-    { name: "Beta Club", icon: <Award className="w-6 h-6"/>, color: "bg-black border border-yellow-500", url: "https://www.betaclub.org", embed: true, minTier: 1 },
-    { name: "Youth Lab", icon: <span className="font-bold">YL</span>, color: "bg-blue-900", url: "#", embed: true, minTier: 1 },
+    {
+        name: "",
+        icon: <img src="/icons/menu_canva.png" alt="Canva" className="w-14 h-14 object-contain" />,
+        color: "bg-white", // Change background color if needed (e.g. Google usually sits on white)color: "bg-green-500", 
+        url: "https://canva.com",
+        embed: true,
+        minTier: 2
+    },
+    { name: "",
+        icon: <img src="/icons/menu_duo.png" alt="Duo" className="w-12 h-12 object-contain" />,
+         color: "bg-white", url: "https://duo.com", embed: true, minTier: 2 
+        },
+    
+         { name: "", 
+        icon: <img src="/icons/menu_meet.png" alt="Meet" className="w-12 h-12 object-contain" />,
+        color: "bg-white border border-yellow-500", url: "https://www.Meet.com", embed: true, minTier: 2 },
+    { name: "",
+        icon: <img src="/icons/menu_3.png" alt="Adobe" className="w-8 h-8 object-contain" />,
+          color: "bg-white", url: "#", embed: true, minTier: 2 },
 
     // MID STUDENT (Tier 2)
-    { name: "Canva", icon: <Palette className="w-6 h-6"/>, color: "bg-cyan-500", url: "https://www.canva.com", embed: false, minTier: 2 },
-    { name: "Zoom", icon: <Video className="w-6 h-6"/>, color: "bg-blue-500", url: "https://zoom.us", embed: false, minTier: 2 },
-    
+    { name: "",
+        icon: <img src="/icons/menu_4.png" alt="Canva" className="w-12 h-12 object-contain" />,
+         color: "bg-white", url: "https://www.canva.com", embed: true, minTier: 2 },
+    { name: "", 
+        icon: <img src="/icons/menu-5.png" alt="Zoom" className="w-12 h-12 object-contain" />,
+        color: "bg-white", url: "https://zoom.us", embed: true, minTier: 2 },
+
     // HS STUDENT (Tier 3)
-    { name: "Adobe", icon: <span className="font-bold text-lg">Ae</span>, color: "bg-red-600", url: "https://www.adobe.com", embed: false, minTier: 3 },
-    { name: "Submit Film", icon: <Film className="w-6 h-6"/>, color: "bg-yellow-500 text-black", url: "#", embed: false, minTier: 3 },
+    { name: "", 
+        icon: <img src="/icons/menu_7.png" alt="menu_7" className="w-12 h-12 object-contain" />,
+         color: "bg-white", url: "https://www.adobe.com", embed: false, minTier: 3 },
+    { name: "",
+        icon: <img src="/icons/menu_8.png" alt="menu_8" className="w-12 h-12 object-contain" />,
+         color: "bg-white text-black", url: "#", embed: false, minTier: 3 },
 
     // COLLEGE (Tier 4)
-    { name: "AI Suite", icon: <Bot className="w-6 h-6"/>, color: "bg-zinc-900 border border-yellow-500/50", url: "#", embed: false, minTier: 4 },
-    { name: "Small Biz", icon: <Briefcase className="w-6 h-6"/>, color: "bg-yellow-400 text-black", url: "#", embed: false, minTier: 4 },
+    { name: "", 
+        icon: <img src="/icons/menu_9.png" alt="menu_9" className="w-12 h-12 object-contain" />,
+        color: "bg-white border border-yellow-500/50", url: "#", embed: false, minTier: 4 },
+    { name: "Small Biz", 
+        icon: <img src="/icons/menu_10.png" alt="menu_10" className="w-12 h-12 object-contain" />,
+         color: "bg-white text-black", url: "#", embed: false, minTier: 4 },
 
     // VERIFIED (Tier 5)
-    { name: "Investors", icon: <DollarSign className="w-6 h-6"/>, color: "bg-zinc-200 text-black", url: "#", embed: false, minTier: 5 },
-    { name: "Filmmaker", icon: <Film className="w-6 h-6"/>, color: "bg-black", url: "#", embed: false, minTier: 5 },
-    { name: "TV Network", icon: <Tv className="w-6 h-6"/>, color: "bg-orange-500", url: "https://famigliadorotv.com", embed: true, minTier: 5 },
-    { name: "Music Suite", icon: <Music className="w-6 h-6"/>, color: "bg-black", url: "#", embed: false, minTier: 5 },
-    
+    { name: "", 
+        icon: <img src="/icons/menu_11.png" alt="menu_11" className="w-12 h-12 object-contain" />,
+        color: "bg-white text-black", url: "#", embed: false, minTier: 5 },
+    { name: "", 
+        icon: <img src="/icons/menu_12.png" alt="menu_12" className="w-12 h-12 object-contain" />,
+         color: "bg-white", url: "#", embed: false, minTier: 5 },
+    { name: "",
+        icon: <img src="/icons/menu_13.png" alt="menu_13?" className="w-12 h-12 object-contain" />,
+          color: "bg-white", url: "https://famigliadorotv.com", embed: true, minTier: 5 },
+    { name: "",
+        icon: <img src="/icons/menu_14.png" alt="menu_14" className="w-12 h-12 object-contain" />,
+         color: "bg-white", url: "#", embed: true, minTier: 5 },
+
     // EXTRAS
-    { name: "Davis Intel", icon: <Cpu className="w-6 h-6"/>, color: "bg-black", url: "#", embed: false, minTier: 5 },
-    { name: "Podcast", icon: <Mic className="w-6 h-6"/>, color: "bg-white text-black border border-zinc-200", url: "#", embed: false, minTier: 5 },
-    { name: "Prize Suite", icon: <Trophy className="w-6 h-6"/>, color: "bg-zinc-900", url: "#", embed: false, minTier: 5 },
-    { name: "Trivia", icon: <HelpCircle className="w-6 h-6"/>, color: "bg-yellow-500", url: "#", embed: false, minTier: 5 },
-    { name: "Xtravaganza", icon: <span className="font-mono text-xs font-bold">CARD</span>, color: "bg-yellow-200 text-black", url: "#", embed: false, minTier: 5 },
-    { name: "GPS", icon: <Navigation className="w-6 h-6"/>, color: "bg-white text-black border border-zinc-200", url: "#", embed: false, minTier: 5 },
-    { name: "Coins", icon: <Coins className="w-6 h-6"/>, color: "bg-black border border-yellow-500", url: "#", embed: false, minTier: 5 },
-    { name: "Rap Battle", icon: <Mic className="w-6 h-6"/>, color: "bg-white text-black border border-zinc-200", url: "#", embed: false, minTier: 5 },
-    { name: "Balez", icon: <span className="font-serif font-bold text-xl">B</span>, color: "bg-black border border-yellow-500", url: "#", embed: false, minTier: 5 },
-    { name: "Curb", icon: <span className="font-black text-sm">CURB</span>, color: "bg-white text-black border border-zinc-200", url: "#", embed: false, minTier: 5 },
-    { name: "Artist", icon: <Disc className="w-6 h-6"/>, color: "bg-black", url: "#", embed: false, minTier: 5 },
-    { name: "V-RAE", icon: <Headphones className="w-6 h-6"/>, color: "bg-white text-black border border-zinc-200", url: "#", embed: false, minTier: 5 },
-    { name: "V-RAE Health", icon: <Activity className="w-6 h-6"/>, color: "bg-black", url: "#", embed: false, minTier: 5 },
+    { name: "",
+        icon: <img src="/icons/menu_15.png" alt="menu_15" className="w-12 h-12 object-contain" />,
+           color: "bg-white", url: "#", embed: true, minTier: 5 },
+    { name: "",
+        icon: <img src="/icons/menu_16.png" alt="menu_16" className="w-12 h-12 object-contain" />,
+          color: "bg-white text-black border border-zinc-200", url: "#", embed: false, minTier: 5 },
+    { name: "",
+        icon: <img src="/icons/menu_17.png" alt="menu_17" className="w-12 h-12 object-contain" />,
+         color: "bg-white", url: "#", embed: true, minTier: 5 },
+    { name: "", 
+        icon: <img src="/icons/menu_18.png" alt="menu_18" className="w-12 h-12 object-contain" />,
+         color: "bg-white", url: "#", embed: true, minTier: 5 },
+    { name: "",
+        icon: <img src="/icons/menu_19.png" alt="menu_19" className="w-12 h-12 object-contain" />,
+          color: "bg-white text-black", url: "#", embed: true, minTier: 5 },
+    { name: "", 
+        icon: <img src="/icons/menu_20.png"alt="menu_20" className="w-12 h-12 object-contain" />,
+         color: "bg-white text-black border border-zinc-200", url: "#", embed: true, minTier: 5 },
+    { name: "",
+        icon: <img src="/icons/menu_21.png" alt="menu_21" className="w-12 h-12 object-contain" />,
+          color: "bg-black border border-yellow-500", url: "#", embed: true, minTier: 5 },
+    { name: "",
+        icon: <img src="/icons/menu_22.png"alt="menu_22" className="w-12 h-12 object-contain" />,
+          color: "bg-white text-black border border-zinc-200", url: "#", embed: true, minTier: 5 },
+    { name: "",
+        icon: <img src="/icons/menu_23.png" alt="menu_23" className="w-12 h-12 object-contain" />,
+          color: "bg-white border border-yellow-500", url: "#", embed: true, minTier: 5 },
+    { name: "",
+        icon: <img src="/icons/menu_24.png" alt="menu_24" className="w-12 h-12 object-contain" />,
+          color: "bg-white text-black border border-zinc-200", url: "#", embed: true, minTier: 5 },
+    { name: "",
+        icon: <img src="/icons/menu_25.png" alt="menu_25" className="w-12 h-12 object-contain" />,
+          color: "bg-white", url: "#", embed: true, minTier: 5 },
+    { name: "",
+        icon: <img src="/icons/menu_26.png" alt="menu_26" className="w-12 h-12 object-contain" />,
+          color: "bg-white text-black border border-zinc-200", url: "#", embed: true, minTier: 5 },
+    { name: "",
+        icon: <img src="/icons/menu_27.png" alt="menu_27" className="w-12 h-12 object-contain" />,
+          color: "bg-white", url: "#", embed: true, minTier: 5 },
+          { name: "",
+        icon: <img src="/icons/menu_28.png" alt="menu_28" className="w-12 h-12 object-contain" />,
+          color: "bg-white", url: "#", embed: true, minTier: 5 },
+{ name: "",
+        icon: <img src="/icons/menu_29.png" alt="menu_29" className="w-12 h-12 object-contain" />,
+          color: "bg-white", url: "#", embed: true, minTier: 5 },
+{ name: "",
+        icon: <img src="/icons/menu_30.jpeg" alt="menu_30" className="w-12 h-12 object-contain" />,
+          color: "bg-white", url: "#", embed: true, minTier: 5 },
+{ name: "",
+        icon: <img src="/icons/menu_31.jpeg" alt="menu_31" className="w-12 h-12 object-contain" />,
+          color: "bg-white", url: "#", embed: true, minTier: 5 },
+
 ]
 
 export default function SuiteHub({ session }: { session: any }) {
@@ -102,9 +176,9 @@ export default function SuiteHub({ session }: { session: any }) {
                         </h2>
                         <p className="text-zinc-400 text-sm max-w-md">Upgrade your badge to unlock premium tools.</p>
                     </div>
-                    
+
                     {/* BUTTON IS HERE */}
-                    <Button 
+                    <Button
                         onClick={() => setShowPlans(true)}
                         className="h-14 px-8 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-bold text-lg rounded-2xl shadow-lg shadow-yellow-500/20 transform hover:scale-105 transition-all flex items-center gap-3"
                     >
@@ -125,7 +199,7 @@ export default function SuiteHub({ session }: { session: any }) {
                     const isLocked = userTierLevel < app.minTier;
                     return (
                         <div key={app.name} onClick={() => handleAppClick(app)} className="flex flex-col items-center gap-2 group cursor-pointer relative">
-                            <div className={`relative w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-105 ${app.color} ${isLocked ? 'opacity-40 grayscale' : ''}`}>
+                            <div className={`relative w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-105 ${app.color} `}>
                                 {app.icon}
                                 {isLocked && <div className="absolute -top-1 -right-1 bg-zinc-900 text-yellow-500 rounded-full p-1 border-2 border-white"><Lock className="w-3 h-3" /></div>}
                             </div>
