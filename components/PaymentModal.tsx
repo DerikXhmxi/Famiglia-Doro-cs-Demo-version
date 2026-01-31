@@ -37,23 +37,46 @@ function CheckoutForm({ plan, session, onSuccess }: any) {
         }
     }
 
-    const handleDatabaseUpdate = async () => {
-        try {
-            // UPDATE PROFILE TIER (For Subscriptions)
-            const { error } = await supabase
-                .from('profiles')
-                .update({ verified_tier: plan.tierId })
-                .eq('id', session.user.id)
-            
-            if (error) throw error
-            onSuccess() 
-        } catch (err: any) {
-            console.error(err)
-            setMessage("Payment succeeded, but activation failed: " + err.message)
-        } finally {
-            setIsLoading(false)
+   // Inside PaymentModal.tsx
+
+const handleDatabaseUpdate = async () => {
+    try {
+        // 1. UPDATE PERMISSIONS TIER (Keep this for logic)
+        await supabase
+            .from('profiles')
+            .update({ verified_tier: plan.tierId })
+            .eq('id', session.user.id)
+
+        // 2. ADD NEW BADGE (If the plan has one)
+        if (plan.badgeImg) {
+            // Optional: Check if they already have this specific badge to prevent duplicates
+            const { data: existing } = await supabase
+                .from('user_badges')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .eq('badge_url', plan.badgeImg)
+                .single()
+
+            if (!existing) {
+                await supabase
+                    .from('user_badges')
+                    .insert({
+                        user_id: session.user.id,
+                        badge_url: plan.badgeImg,
+                        badge_name: plan.name,
+                        tier_id: plan.tierId
+                    })
+            }
         }
+        
+        onSuccess() 
+    } catch (err: any) {
+        console.error(err)
+        setMessage("Payment succeeded, but activation failed: " + err.message)
+    } finally {
+        setIsLoading(false)
     }
+}
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6 pt-4">
@@ -136,7 +159,7 @@ export default function PaymentModal({ isOpen, onClose, plan, session }: any) {
         try {
             const { error } = await supabase
                 .from('profiles')
-                .update({ verified_tier: plan.tierId })
+                .update({ verified_tier: plan.tierId  ,verified_badge: plan.badgeImg })
                 .eq('id', session.user.id)
 
             if (error) throw error
