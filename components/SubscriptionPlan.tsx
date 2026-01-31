@@ -188,7 +188,7 @@ const PLANS = [
         color: "bg-emerald-600 text-white",
         tierId: "suitehub_access",
         badgeImg: "/badges/badge11.png"
-    },
+    }, 
     {
         name: "Business LifeTime",
         price: "39.99",

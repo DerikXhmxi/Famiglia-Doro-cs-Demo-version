@@ -373,6 +373,7 @@ export default function MallFeed({ session, onChat, onShare, globalSearch = '', 
         {/* DETAILS MODAL */}
         <Dialog open={!!selectedProduct} onOpenChange={(open) => !open && setSelectedProduct(null)}>
             <DialogContent className="max-w-[90vw] lg:max-w-6xl p-0 overflow-hidden bg-white rounded-3xl border-none h-[90vh] flex flex-col md:flex-row">
+                <DialogTitle></DialogTitle>
                 {selectedProduct && (() => {
                     const mediaList = getMediaList(selectedProduct); const activeMedia = mediaList[activeMediaIndex]
                     const isOwner = selectedProduct.seller_id === session.user.id

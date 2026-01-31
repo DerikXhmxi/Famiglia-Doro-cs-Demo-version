@@ -494,25 +494,48 @@ export default function Page() {
 
             {isSettingsOpen && <SettingsPanel onClose={() => setIsSettingsOpen(false)} onLogout={handleLogout} />}
             {activeCall && <CallOverlay session={session} activeCall={activeCall} onEndCall={() => setActiveCall(null)} />}
+<header className="sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/80 h-auto backdrop-blur-xl">
+    <div className="mx-auto flex h-16 max-w-7xl overflow-hidden items-center justify-between px-4 sm:px-6 lg:px-8">
+        {/* LOGO SECTION */}
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab("feed")}>
+            <img 
+                src="/icons/logo.jpg" 
+                // Changed from h-10 to h-14 to fill the header height better
+                className='h-32 w-32 md:w-40 md:h-40  p-4 object-contain rounded-xl' 
+                alt="logo" 
+            />                        
+        </div>
 
-            <header className="sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/80 backdrop-blur-xl">
-                <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab("feed")}><AppLogo /></div>
-                    <div className="hidden md:flex max-w-md flex-1 items-center px-8 relative">
-                        <div id="global-search" className="relative w-full z-50">              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-                            <input placeholder={t('searchYourProductuct')} className="w-full rounded-full bg-zinc-100 py-2 pl-10 pr-4 text-sm font-medium text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50" value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} />
-                        </div>
-                    </div>
-                    <div id="header-actions" className="flex items-center gap-2">            <NotificationBell userId={session.user.id} />
-                        <Button variant="ghost" size="icon" onClick={() => setIsTourOpen(true)} className="text-zinc-500 hover:bg-zinc-100 hover:text-yellow-600 rounded-full">
-                            <HelpCircle className="h-5 w-5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={openGlobalChat} className="text-zinc-500 hover:bg-zinc-100 hover:text-yellow-600 rounded-full">
-                            <MessageSquare className="h-5 w-5" />
-                        </Button><div className="ml-2 h-8 w-px bg-zinc-200"></div>
-                        <Avatar className="ml-2 h-9 w-9 cursor-pointer ring-2 ring-white shadow-sm hover:ring-yellow-200 transition-all" onClick={() => setIsProfileOpen(true)}><AvatarImage src={session.user.user_metadata?.avatar_url} /><AvatarFallback>U</AvatarFallback></Avatar></div>
-                </div>
-            </header>
+        {/* SEARCH BAR */}
+        <div className="hidden md:flex max-w-md flex-1 items-center px-8 relative">
+            <div id="global-search" className="relative w-full z-50">              
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                <input 
+                    placeholder={t('searchYourProductuct')} 
+                    className="w-full rounded-full bg-zinc-100 py-2 pl-10 pr-4 text-sm font-medium text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50" 
+                    value={globalSearch} 
+                    onChange={(e) => setGlobalSearch(e.target.value)} 
+                />
+            </div>
+        </div>
+
+        {/* ACTIONS */}
+        <div id="header-actions" className="flex items-center gap-2">            
+            <NotificationBell userId={session.user.id} />
+            <Button variant="ghost" size="icon" onClick={() => setIsTourOpen(true)} className="text-zinc-500 hover:bg-zinc-100 hover:text-yellow-600 rounded-full">
+                <HelpCircle className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={openGlobalChat} className="text-zinc-500 hover:bg-zinc-100 hover:text-yellow-600 rounded-full">
+                <MessageSquare className="h-5 w-5" />
+            </Button>
+            <div className="ml-2 h-8 w-px bg-zinc-200"></div>
+            <Avatar className="ml-2 h-9 w-9 cursor-pointer ring-2 ring-white shadow-sm hover:ring-yellow-200 transition-all" onClick={() => setIsProfileOpen(true)}>
+                <AvatarImage src={session.user.user_metadata?.avatar_url} />
+                <AvatarFallback>U</AvatarFallback>
+            </Avatar>
+        </div>
+    </div>
+</header>
 
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 relative z-10">
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
