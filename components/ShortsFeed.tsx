@@ -123,7 +123,10 @@ function ShortItem({ short, session, onDelete, onShare }: ShortItemProps) {
         }
     }
 
-        const { currentPack } = useEmojiSystem(session?.user?.id)
+     const tierLevel = 5;
+    const isVip = tierLevel >= 5 ;
+   
+        const { currentPack } = useEmojiSystem(session?.user?.id , isVip)
     
     return (
         <div id={`short-${short.id}`} className="relative w-full h-full snap-start flex items-center justify-center bg-black border-b border-zinc-900 overflow-hidden group">

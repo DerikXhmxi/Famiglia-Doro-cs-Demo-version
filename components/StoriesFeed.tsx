@@ -19,8 +19,9 @@ export default function StoriesFeed({ user }: { user: any }) {
     const [stories, setStories] = useState<any[]>([])
     const [viewingStory, setViewingStory] = useState<any>(null)
     const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success'>('idle')
-
-        const { currentPack } = useEmojiSystem(user?.id)
+  const tierLevel = 5;
+    const isVip = tierLevel >= 5 ;
+        const { currentPack } = useEmojiSystem(user?.id ,isVip)
     
     useEffect(() => {
         const fetchStories = async () => {
