@@ -391,6 +391,8 @@ export default function Page() {
     const [shareData, setShareData] = useState<{ type: string, data: any } | null>(null)
     const [deepLink, setDeepLink] = useState<{ type: string, id: string } | null>(null)
     const [isTourOpen, setIsTourOpen] = useState(false) // <--- TOUR STATE
+   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false) // NEW
+const [isMobileWidgetsOpen, setIsMobileWidgetsOpen] = useState(false) // NEW
     const refreshSession = async () => { const { data } = await supabase.auth.refreshSession(); if (data.session) setSession(data.session) }
 
     const TOUR_STEPS: TourStep[] = [
@@ -452,8 +454,25 @@ export default function Page() {
         setViewProfileId(id)
     }
     const handleOpenShare = (type: string, data: any) => { setShareData({ type, data }) }
-    const handleLogout = async () => { await supabase.auth.signOut(); window.location.reload() }
-    const startCall = (target: any, isVideo: boolean) => { /* call logic */ }
+// UPDATE THIS FUNCTION IN YOUR MAIN Page() COMPONENT
+    const handleLogout = async () => { 
+        // 1. Sign out from Supabase
+        const { error } = await supabase.auth.signOut();
+        
+        if (error) {
+            console.error("Logout Error:", error.message);
+        }
+
+        // 2. Clear local session state immediately to trigger re-render
+        setSession(null); 
+
+        // 3. Clear any local storage if you use it custom (Supabase does this automatically usually)
+        // localStorage.removeItem('sb-...-auth-token'); 
+
+        // 4. Force reload to ensure a clean slate (optional but recommended for clean cleanup)
+        window.location.href = "/"; 
+    }
+        const startCall = (target: any, isVideo: boolean) => { /* call logic */ }
     const openGlobalChat = () => { setChatGroup(null); setChatReceiver(null); setIsChatOpen(true) }
     const openGroupChat = (group: any) => { setChatGroup(group); setChatReceiver(null); setIsChatOpen(true) }
     const openPrivateChat = (targetUser: any) => { setChatReceiver(targetUser); setChatGroup(null); setIsChatOpen(true) }
@@ -474,7 +493,7 @@ export default function Page() {
     if (!session) return <AuthPage onLogin={() => { }} />
 
     return (
-        <div className="min-h-screen bg-zinc-50/50 text-zinc-900 font-sans selection:bg-yellow-100 relative">
+        <div className="min-h-screen bg-zinc-50/50 text-zinc-900 font-sans pb-20 lg:pb-0 selection:bg-yellow-100 relative">
             <BackgroundArt />
             {/* <FeatureTour 
         isOpen={isTourOpen} 
@@ -496,7 +515,7 @@ export default function Page() {
             {isSettingsOpen && <SettingsPanel onClose={() => setIsSettingsOpen(false)} onLogout={handleLogout} />}
             {activeCall && <CallOverlay session={session} activeCall={activeCall} onEndCall={() => setActiveCall(null)} />}
 <header className="sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/80 h-auto backdrop-blur-xl">
-    <div className="mx-auto flex h-16 max-w-7xl overflow-hidden items-center justify-between px-4 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl flex h-16 overflow-hidden items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* LOGO SECTION */}
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab("feed")}>
             <img 
@@ -577,8 +596,7 @@ export default function Page() {
         </div>
     </nav>
 </aside>
-                    <main className={activeTab === 'chat' ? "lg:col-span-9" : "lg:col-span-6 space-y-6"}>
-                        <Tabs value={activeTab} onValueChange={setActiveTab} className=" w-full">
+<main className={activeTab === 'chat' ? "lg:col-span-9 md:col-span-9" : "lg:col-span-6 md:col-span-6 space-y-6"}>                        <Tabs value={activeTab} onValueChange={setActiveTab} className=" w-full">
                             {activeTab !== 'chat' && (
                               <TabsList id="app-tabs"
     // --- CHANGED: grid-cols-5 for 5 items per row ---
@@ -750,7 +768,8 @@ export default function Page() {
                     </main>
 
                     {activeTab !== 'chat' && (
-                        <aside id="right-sidebar" className="hidden lg:block lg:col-span-3 space-y-6">              <IncomingRequests session={session} />
+                        <aside id="right-sidebar" className="hidden md:block md:col-span-3 lg:col-span-3 sticky top-24 h-[calc(100vh-100px)] overflow-y-auto pr-2 custom-scrollbar">
+                                     <IncomingRequests session={session} />
                             <SidebarChatWidget session={session} onChat={openPrivateChat} />
                             <SuggestedFriends session={session} onViewProfile={handleViewProfile} />
                             {/* <div className="rounded-3xl bg-white p-6 shadow-sm border border-zinc-100"> */}

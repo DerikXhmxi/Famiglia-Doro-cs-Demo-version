@@ -617,5 +617,6 @@
   "privateChat": "Private Chat",
   "globalLiveChat": "Global Live Chat",
   "publicRoom": "Public Room"
-  
+  , "nav_logout" : "Logout"
+
 }
