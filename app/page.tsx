@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
-import { Search, MessageSquare, Settings, LogOut, Home, ThumbsUp, Film, Users, Zap, Calendar, ShoppingBag, Grid, Tv, Phone, Video, Heart, Share2, MessageCircle, Play, Volume2, VolumeX, Trash2, HelpCircle, Briefcase, Gamepad2 } from "lucide-react"
+import { Search, MessageSquare, Settings, LogOut, Home, ThumbsUp, Film, Users, Zap, Calendar, ShoppingBag, Grid, Tv, Phone, Video, Heart, Share2, MessageCircle, Play, Volume2, VolumeX, Trash2, HelpCircle, Briefcase, Gamepad2, X } from "lucide-react"
 import { useEmojiSystem } from '@/lib/useEmojiSystem' // <--- IMPORT THE HOOK
 // --- COMPONENT IMPORTS ---
 import AuthPage from '@/components/AuthPage'
@@ -271,12 +271,13 @@ function RealPostsFeed(
 
                         <div className="flex gap-4">
                             {/* 1. LIKE BUTTON (Heart) */}
-                            <button
+                            {/* <button
                                 onClick={() => handleLike(post)}
                                 className={`flex items-center gap-2 text-sm font-medium transition-colors ${post.isLiked ? 'text-blue-500' : 'text-zinc-500 hover:text-blue-500'}`}
                             >
                                 <ThumbsUp className={`h-5 w-5 ${post.isLiked ? 'fill-current' : ''}`} />
-                                <span>{post.likeCount > 0 ? post.likeCount : t('likes')}</span>        </button>
+                                <span>{post.likeCount > 0 ? post.likeCount : t('likes')}</span>      
+                            </button> */}
 
                             {/* 2. REACTION DOCK (Smile) */}
                             <div className="flex items-center gap-2">
@@ -540,35 +541,49 @@ export default function Page() {
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 relative z-10">
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
 
-                    <aside id="nav-sidebar" className="hidden lg:block lg:col-span-3">            <nav className="sticky top-24 space-y-1">
-                        <NavItem activeImg='/icons/teasers.jpeg' inactiveImg='/icons/teasers.jpeg' icon={<Home />} label={t('home')} active={activeTab === 'feed'} onClick={() => setActiveTab('feed')} />
-                        <NavItem icon={<MessageSquare />} label={t('messages')} active={activeTab === 'chat'} onClick={() => setActiveTab('chat')} />
-                        <NavItem activeImg='/icons/snippet.jpeg' inactiveImg='/icons/snippet.jpeg' icon={<Film />} label={t('shorts')} active={activeTab === 'shorts'} onClick={() => setActiveTab('shorts')} />
-                        <NavItem activeImg='/icons/group.png' inactiveImg='/icons/group.png' icon={<Users />} label={t('groups')} active={activeTab === 'groups'} onClick={() => setActiveTab('groups')} />
-                        <NavItem activeImg='/icons/video_icon.svg' inactiveImg='/icons/video_icon.svg' icon={<Zap />} label={t('live')} active={activeTab === 'live'} onClick={() => setActiveTab('live')} />
-                        <NavItem activeImg='/icons/event.png' inactiveImg='/icons/event.png' icon={<Calendar />} label={t('events')} active={activeTab === 'events'} onClick={() => setActiveTab('events')} />
-                        <NavItem activeImg='/icons/global_nav.png' inactiveImg='/icons/global_nav.png' icon={<ShoppingBag />} label={t('globalMall')} active={activeTab === 'mall'} onClick={() => setActiveTab('mall')} />
-                        <NavItem activeImg='/icons/menu_18.png' inactiveImg='/icons/menu_18.png' icon={<Grid />} label={t('suiteHub')} active={activeTab === 'suite'} onClick={() => setActiveTab('suite')} />
-                        <NavItem activeImg='/icons/logo_nav.png' inactiveImg='/icons/logo_nav.png' icon={<Tv />} label={t('tvNetwork')} active={activeTab === 'tv'} onClick={() => setActiveTab('tv')} />
-                        <div className="my-4 h-px bg-zinc-200/50 mx-4"></div>
-                        <NavItem activeImg='/icons/home1.jpeg' inactiveImg='/icons/home1.jpeg' icon={<Briefcase />} label={t('bizNetworx')} active={activeTab === 'biz'} onClick={() => setActiveTab('biz')} />
-                        <NavItem activeImg='/icons/home2.jpeg' inactiveImg='/icons/home2.jpeg' icon={<Gamepad2 />} label={t('kidzHQ')} active={activeTab === 'kidz'} onClick={() => setActiveTab('kidz')} />
-                        <div className="pt-8">
-                            <h3 className="px-4 text-xs font-semibold uppercase tracking-wider text-zinc-400">{t('settings')}</h3>
-                            <div className="mt-2 space-y-1">
-                                <NavItem icon={<Settings />} label={t('mediaPreferences')} onClick={() => setIsSettingsOpen(true)} />
-                                <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"><LogOut className="h-5 w-5" /> {t('lOGOUT')}</button>
-                            </div>
-                        </div>
-                    </nav>
-                    </aside>
+                  <aside 
+    id="nav-sidebar" 
+    // FIX: Added h-[calc(100vh-100px)] to set height and overflow-y-auto to enable scroll
+    className="hidden lg:block lg:col-span-3 sticky top-24 h-[calc(100vh-100px)] overflow-y-auto pr-2 custom-scrollbar"
+>       
+    <nav className="space-y-1">
+        <NavItem activeImg='/icons/teasers.jpeg' inactiveImg='/icons/teasers.jpeg' icon={<Home />} label={t('home')} active={activeTab === 'feed'} onClick={() => setActiveTab('feed')} />
+        <NavItem icon={<MessageSquare />} label={t('messages')} active={activeTab === 'chat'} onClick={() => setActiveTab('chat')} />
+        <NavItem activeImg='/icons/snippet.jpeg' inactiveImg='/icons/snippet.jpeg' icon={<Film />} label={t('shorts')} active={activeTab === 'shorts'} onClick={() => setActiveTab('shorts')} />
+        <NavItem activeImg='/icons/group.png' inactiveImg='/icons/group.png' icon={<Users />} label={t('groups')} active={activeTab === 'groups'} onClick={() => setActiveTab('groups')} />
+        <NavItem activeImg='/icons/video_icon.svg' inactiveImg='/icons/video_icon.svg' icon={<Zap />} label={t('live')} active={activeTab === 'live'} onClick={() => setActiveTab('live')} />
+        <NavItem activeImg='/icons/event.png' inactiveImg='/icons/event.png' icon={<Calendar />} label={t('events')} active={activeTab === 'events'} onClick={() => setActiveTab('events')} />
+        <NavItem activeImg='/icons/global_nav.png' inactiveImg='/icons/global_nav.png' icon={<ShoppingBag />} label={t('globalMall')} active={activeTab === 'mall'} onClick={() => setActiveTab('mall')} />
+        <NavItem activeImg='/icons/menu_18.png' inactiveImg='/icons/menu_18.png' icon={<Grid />} label={t('suiteHub')} active={activeTab === 'suite'} onClick={() => setActiveTab('suite')} />
+        <NavItem activeImg='/icons/logo_nav.png' inactiveImg='/icons/logo_nav.png' icon={<Tv />} label={t('tvNetwork')} active={activeTab === 'tv'} onClick={() => setActiveTab('tv')} />
+        
+        {/* Expanded Items */}
+        <NavItem activeImg='/icons/crm.jpeg' inactiveImg='/icons/crm.jpeg' icon={<Briefcase />} label={t('CRM')} active={activeTab === 'crm'} onClick={() => setActiveTab('crm')} />
+        <NavItem activeImg='/icons/promotion.png' inactiveImg='/icons/promotion.png' icon={<Briefcase />} label={t('Promotion')} active={activeTab === 'Promotion'} onClick={() => setActiveTab('Promotion')} />
+        <NavItem activeImg='/icons/train.png' inactiveImg='/icons/train.png' icon={<Briefcase />} label={t('Train Station')} active={activeTab === 'Train-Station'} onClick={() => setActiveTab('Train-Station')} />
+        <NavItem activeImg='/icons/suit.png' inactiveImg='/icons/suit.png' icon={<Briefcase />} label={t('Challenge Suite')} active={activeTab === 'Challenge-Suit'} onClick={() => setActiveTab('Challenge-Suit')} />
 
+        <div className="my-4 h-px bg-zinc-200/50 mx-4"></div>
+        
+        <NavItem activeImg='/icons/home1.jpeg' inactiveImg='/icons/home1.jpeg' icon={<Briefcase />} label={t('bizNetworx')} active={activeTab === 'biz'} onClick={() => setActiveTab('biz')} />
+        <NavItem activeImg='/icons/home2.jpeg' inactiveImg='/icons/home2.jpeg' icon={<Gamepad2 />} label={t('kidzHQ')} active={activeTab === 'kidz'} onClick={() => setActiveTab('kidz')} />
+        
+        <div className="pt-8 pb-10"> {/* Added pb-10 for bottom spacing */}
+            <h3 className="px-4 text-xs font-semibold uppercase tracking-wider text-zinc-400">{t('settings')}</h3>
+            <div className="mt-2 space-y-1">
+                <NavItem icon={<Settings />} label={t('mediaPreferences')} onClick={() => setIsSettingsOpen(true)} />
+                <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"><LogOut className="h-5 w-5" /> {t('lOGOUT')}</button>
+            </div>
+        </div>
+    </nav>
+</aside>
                     <main className={activeTab === 'chat' ? "lg:col-span-9" : "lg:col-span-6 space-y-6"}>
                         <Tabs value={activeTab} onValueChange={setActiveTab} className=" w-full">
                             {activeTab !== 'chat' && (
-                                <TabsList id="app-tabs"
-                                    className="w-full bg-white p-2 rounded-2xl shadow-sm border border-zinc-100 h-auto grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-2 mb-6">
-                                    <TabsTrigger
+                              <TabsList id="app-tabs"
+    // --- CHANGED: grid-cols-5 for 5 items per row ---
+    className="w-full bg-white p-2 rounded-2xl shadow-sm border border-zinc-100 h-auto grid grid-cols-5 gap-2 mb-6"
+>      <TabsTrigger
                                         value="feed" className="group flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"                                    >
                                         <img
                                             src="/icons/teasers.jpeg"
@@ -597,11 +612,11 @@ export default function Page() {
                                         alt="Home"
                                         className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
                                     /> {t('events')}</TabsTrigger>
-                                    <TabsTrigger value="crm" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
+                                    {/* <TabsTrigger value="crm" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/crm.jpeg"
                                         alt="CRM"
                                         className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
-                                    /> {t('CRM')}</TabsTrigger>
+                                    /> {t('CRM')}</TabsTrigger> */}
                                     <TabsTrigger value="mall" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/global_nav.png"
                                         alt="Home"
@@ -629,16 +644,16 @@ export default function Page() {
                                     /> {t('kidzHQ')}</TabsTrigger>
 
 
-                                    <TabsTrigger value="Promotion" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
-                                        src="/icons/promotion.jpeg"
-                                        alt="Promotion"
+                                     <TabsTrigger value="Challenge-Suit" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
+                                        src="/icons/suit.jpeg"
+                                        alt="Challenge Suit Logo"
                                         className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
-                                    /> {t('Promotion')}</TabsTrigger>
-                                    <TabsTrigger value="Train-Station" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
+                                    /> {t('Challenge Suite')}</TabsTrigger>
+                             {/*       <TabsTrigger value="Train-Station" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/Train.jpeg"
                                         alt="Train-Station"
                                         className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
-                                    /> {t('Train Station')}</TabsTrigger>
+                                    /> {t('Train Station')}</TabsTrigger> */}
                                 </TabsList>
                             )}
 
@@ -722,6 +737,13 @@ export default function Page() {
                                     title={t('Train Station')}
                                     icon={Gamepad2}
                                     description="Train Station"
+                                />
+                            </TabsContent>
+                              <TabsContent value="Challenge-Suit">
+                                <ComingSoon
+                                    title={t('Challenge Suite')}
+                                    icon={Gamepad2}
+                                    description="Challenge Suite"
                                 />
                             </TabsContent>
                         </Tabs>

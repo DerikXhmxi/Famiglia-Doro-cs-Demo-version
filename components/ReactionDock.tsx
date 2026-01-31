@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Smile } from 'lucide-react'
+import { Smile, ThumbsUp } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 // Ensure this import path matches where you saved your types
 import { EmojiItem, EmojiPack } from '@/lib/emojiPacks' 
@@ -63,7 +63,7 @@ export default function ReactionDock({
                             <span className="text-xl scale-110">{currentReaction}</span>
                         )
                     ) : (
-                        <Smile className={`w-5 h-5 ${isOpen ? 'text-yellow-500 fill-current' : ''}`} />
+                        <ThumbsUp className={`w-5 h-5 ${isOpen ? 'text-yellow-500 fill-current' : ''}`} />
                     )}
                     
                     {/* TEXT LOGIC */}
