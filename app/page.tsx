@@ -36,11 +36,11 @@ import WebsiteTour, { TourStep } from '@/components/WebsiteTour'
 
 
 
-function ComingSoon({ title, icon: Icon, description }: { title: string, icon: any, description: string }) {
+function ComingSoon({ title, icon: Icon ,image, description }: { title: string, icon: any, description: string , image : string }) {
     return (
         <div className="flex flex-col items-center justify-center h-[70vh] bg-white rounded-3xl border border-zinc-100 shadow-sm text-center p-8 animate-in fade-in zoom-in-95 duration-300">
-            <div className="w-24 h-24 bg-yellow-50 rounded-full flex items-center justify-center mb-6">
-                <Icon className="w-10 h-10 text-yellow-500" />
+            <div className="w-32 h-32 bg-yellow-50 rounded-full flex items-center justify-center mb-6">
+              {image? <img src={image} alt="" className="w-32 h-auto"  /> :  <Icon className="w-10 h-10 text-yellow-500" />}
             </div>
             <h2 className="text-3xl font-black text-zinc-900 mb-2">{title}</h2>
             <div className="flex items-center gap-2 mb-4">
@@ -579,7 +579,7 @@ const [isMobileWidgetsOpen, setIsMobileWidgetsOpen] = useState(false) // NEW
         {/* Expanded Items */}
         <NavItem activeImg='/icons/crm.jpg' inactiveImg='/icons/crm.jpg' icon={<Briefcase />} label={t('CRM')} active={activeTab === 'crm'} onClick={() => setActiveTab('crm')} />
         <NavItem activeImg='/icons/promotion.jpg' inactiveImg='/icons/promotion.jpg' icon={<Briefcase />} label={t('Promotion')} active={activeTab === 'Promotion'} onClick={() => setActiveTab('Promotion')} />
-        <NavItem activeImg='/icons/train.jpg' inactiveImg='/icons/train.jpg' icon={<Briefcase />} label={t('Train Station')} active={activeTab === 'Train-Station'} onClick={() => setActiveTab('Train-Station')} />
+        <NavItem activeImg='' inactiveImg='' icon={<Gamepad2 />} label={t('Train Station')} active={activeTab === 'Train-Station'} onClick={() => setActiveTab('Train-Station')} />
         <NavItem activeImg='/icons/challenge_suit.jpg' inactiveImg='/icons/suit.jpg' icon={<Briefcase />} label={t('Challenge Suite')} active={activeTab === 'Challenge-Suit'} onClick={() => setActiveTab('Challenge-Suit')} />
 
         <div className="my-4 h-px bg-zinc-200/50 mx-4"></div>
@@ -722,6 +722,7 @@ const [isMobileWidgetsOpen, setIsMobileWidgetsOpen] = useState(false) // NEW
                                 <ComingSoon
                                     title={t('bizNetworx')}
                                     icon={Briefcase}
+                                    image='/icons/home1.jpeg'
                                     description={t('bizDescription') || "Coming Soon"}
                                 />
                             </TabsContent>
@@ -729,6 +730,7 @@ const [isMobileWidgetsOpen, setIsMobileWidgetsOpen] = useState(false) // NEW
                             <TabsContent value="kidz">
                                 <ComingSoon
                                     title={t('kidzHQ')}
+                                    image='/icons/home2.jpeg'
                                     icon={Gamepad2}
                                     description="A safe, fun, and interactive space for the younger generation. Games, educational content, and family-friendly entertainment."
                                 />
@@ -737,6 +739,7 @@ const [isMobileWidgetsOpen, setIsMobileWidgetsOpen] = useState(false) // NEW
                             <TabsContent value="crm">
                                 <ComingSoon
                                     title={t('CRM')}
+                                    image='/icons/crm.jpg'
                                     icon={Gamepad2}
                                     description="CRM"
                                 />
@@ -746,6 +749,7 @@ const [isMobileWidgetsOpen, setIsMobileWidgetsOpen] = useState(false) // NEW
 
                                 <ComingSoon
                                     title={t('Promotion')}
+                                    image='/icons/promotion.jpg'
                                     icon={Gamepad2}
                                     description="Promotion"
                                 />
@@ -753,6 +757,7 @@ const [isMobileWidgetsOpen, setIsMobileWidgetsOpen] = useState(false) // NEW
                             <TabsContent value="Train-Station">
                                 <ComingSoon
                                     title={t('Train Station')}
+                                    image=''
                                     icon={Gamepad2}
                                     description="Train Station"
                                 />
@@ -760,6 +765,7 @@ const [isMobileWidgetsOpen, setIsMobileWidgetsOpen] = useState(false) // NEW
                               <TabsContent value="Challenge-Suit">
                                 <ComingSoon
                                     title={t('Challenge Suite')}
+                                    image='/icons/challenge_suit.jpg'
                                     icon={Gamepad2}
                                     description="Challenge Suite"
                                 />
