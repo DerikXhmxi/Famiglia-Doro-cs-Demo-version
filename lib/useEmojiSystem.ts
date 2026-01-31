@@ -2,20 +2,18 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-// Make sure this path matches where you saved the EMOJI_PACKS data from Step 1
 import { EMOJI_PACKS, EmojiPack } from '@/lib/emojiPacks' 
 
 export function useEmojiSystem(userId: string | null, isVip: boolean) {
     const [activePackId, setActivePackId] = useState<string>('defaults')
     const [loading, setLoading] = useState(true)
 
-    // 1. FILTER PACKS BASED ON VIP STATUS
-    // Convert the Record object to an Array for easier filtering
     const allPacksArray = Object.values(EMOJI_PACKS)
 
+    // Filter Logic
     const accessiblePacks = allPacksArray.filter(pack => {
-        if (pack.level === 1) return true; // Level 1 is always free
-        if (pack.level === 2 && isVip) return true; // Level 2 requires VIP
+        if (pack.level === 1) return true;
+        if (pack.level === 2 && isVip) return true;
         return false;
     })
 
@@ -23,8 +21,25 @@ export function useEmojiSystem(userId: string | null, isVip: boolean) {
         return pack.level === 2 && !isVip;
     })
 
-    // 2. FETCH & SYNC ACTIVE PACK FROM DB
-    // We still want to remember which pack the user selected last time
+    // --- NEW: FUNCTION TO SAVE PREFERENCE TO DB ---
+    const selectPack = async (packId: string) => {
+        // 1. Optimistic Update (Immediate UI change)
+        setActivePackId(packId)
+
+        if (!userId) return
+
+        // 2. Persist to Supabase
+        const { error } = await supabase
+            .from('user_settings')
+            .upsert({ 
+                user_id: userId, 
+                active_emoji_pack: packId 
+            }, { onConflict: 'user_id' })
+
+        if (error) console.error("Failed to save emoji preference:", error)
+    }
+
+    // Fetch & Sync Logic
     useEffect(() => {
         if (!userId) {
             setLoading(false)
@@ -40,17 +55,16 @@ export function useEmojiSystem(userId: string | null, isVip: boolean) {
                     .single()
 
                 if (data?.active_emoji_pack) {
-                    // Check if the user is allowed to use this saved pack (e.g. if they lost VIP)
                     const pack = EMOJI_PACKS[data.active_emoji_pack]
+                    // Validate if user still has access (e.g. VIP check)
                     if (pack && (pack.level === 1 || (pack.level === 2 && isVip))) {
                         setActivePackId(data.active_emoji_pack)
                     } else {
-                        // Fallback to default if saved pack is locked/invalid
                         setActivePackId('defaults') 
                     }
                 }
             } catch (error) {
-                console.error("Error fetching emoji settings:", error)
+                console.error("Error fetching settings:", error)
             } finally {
                 setLoading(false)
             }
@@ -58,7 +72,7 @@ export function useEmojiSystem(userId: string | null, isVip: boolean) {
 
         fetchSettings()
 
-        // Realtime listener for setting changes
+        // Realtime Listener (Syncs across tabs/devices)
         const channel = supabase.channel('emoji_settings_realtime')
             .on(
                 'postgres_changes',
@@ -69,13 +83,8 @@ export function useEmojiSystem(userId: string | null, isVip: boolean) {
                     filter: `user_id=eq.${userId}` 
                 }, 
                 (payload) => {
-                    if (payload.new && payload.new.active_emoji_pack) {
-                        const newPackId = payload.new.active_emoji_pack
-                        // Validate access again in realtime
-                        const pack = EMOJI_PACKS[newPackId]
-                        if (pack && (pack.level === 1 || (pack.level === 2 && isVip))) {
-                            setActivePackId(newPackId)
-                        }
+                    if (payload.new?.active_emoji_pack) {
+                        setActivePackId(payload.new.active_emoji_pack)
                     }
                 }
             )
@@ -84,12 +93,11 @@ export function useEmojiSystem(userId: string | null, isVip: boolean) {
         return () => { supabase.removeChannel(channel) }
     }, [userId, isVip])
 
-    // 3. DETERMINE CURRENT ACTIVE PACK
-    // If the activePackId isn't in accessible packs (edge case), fallback to the first accessible one
-    const currentPack = accessiblePacks.find(p => p.id === activePackId) || accessiblePacks[0] || EMOJI_PACKS['defaults']
+    const currentPack = accessiblePacks.find(p => p.id === activePackId) || EMOJI_PACKS['defaults']
 
     return { 
         activePackId, 
+        selectPack, // <--- EXPORT THIS
         accessiblePacks, 
         lockedPacks, 
         currentPack, 

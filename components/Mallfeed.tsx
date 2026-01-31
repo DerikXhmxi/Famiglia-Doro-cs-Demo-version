@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog" // Removed DialogTrigger (we control it manually now)
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -14,21 +14,27 @@ import {
   ShoppingBag, Plus, Search, Loader2, MessageCircle, 
   Play, Video as VideoIcon, Image as ImageIcon, Trash2, 
   ShoppingCart, Check, Minus, X, UploadCloud, CheckCircle,
-  Edit, User, Calendar, Share2
+  Edit, Calendar, Share2, Lock, Store, ShieldCheck // Added Lock, Store, ShieldCheck
 } from 'lucide-react'
 import PaymentModal from '@/components/PaymentModal'
+import SubscriptionPlans from '@/components/SubscriptionPlan' // Import Plans
 
-// --- TYPE DEFINITION ---
+// --- CONFIG: TIERS ALLOWED TO SELL ---
+const TIERS_WITH_SELLER_ACCESS = [
+    'free_trial', 'mid_student', 'hs_student', 'college_student',
+    'verified_user', 'verified_live', 'content_creator', 'verified_artist',
+    'content_upload_badge', 'business_startup', 'suitehub_access',
+    'all_no_live', 'ultimate_no_suite', 'full_suite_access'
+]
+
 type MallFeedProps = {
     session: any;
     onChat: (seller: any) => void;
     onShare: (item: any) => void;
     globalSearch?: string;
     deepLink?: string | null;
-    businessId?: string; // <--- Added this
+    businessId?: string; 
 }
-
-
 
 // --- CART DRAWER ---
 function CartDrawer({ cart, onUpdateQty, onRemove, onCheckout }: { cart: any[], onUpdateQty: (id: number, delta: number) => void, onRemove: (id: number) => void, onCheckout: () => void }) {
@@ -52,13 +58,11 @@ function CartDrawer({ cart, onUpdateQty, onRemove, onCheckout }: { cart: any[], 
                                 <p className="font-bold text-sm line-clamp-1">{item.name}</p>
                                 <p className="text-zinc-500 text-xs mb-2">${item.price} each</p>
                                 <div className="flex items-center gap-2">
-                                    {/* FIX: Passing item.cart_id instead of item.id */}
                                     <Button size="icon" variant="outline" className="h-6 w-6 rounded-full" onClick={() => onUpdateQty(item.cart_id, -1)} disabled={item.quantity <= 1}><Minus className="w-3 h-3"/></Button>
                                     <span className="text-sm font-bold w-4 text-center">{item.quantity}</span>
                                     <Button size="icon" variant="outline" className="h-6 w-6 rounded-full" onClick={() => onUpdateQty(item.cart_id, 1)}><Plus className="w-3 h-3"/></Button>
                                 </div>
                             </div>
-                            {/* FIX: Passing item.cart_id */}
                             <Button size="icon" variant="ghost" className="h-8 w-8 text-red-400 hover:bg-red-50 hover:text-red-600" onClick={() => onRemove(item.cart_id)}><Trash2 className="w-4 h-4"/></Button>
                         </div>
                     ))}
@@ -72,12 +76,17 @@ function CartDrawer({ cart, onUpdateQty, onRemove, onCheckout }: { cart: any[], 
     )
 }
 
-
-export default function MallFeed({ session, onChat, onShare, globalSearch = '', deepLink  , businessId}: MallFeedProps) {  
+export default function MallFeed({ session, onChat, onShare, globalSearch = '', deepLink, businessId}: MallFeedProps) {  
   const [products, setProducts] = useState<any[]>([])
   const [cart, setCart] = useState<any[]>([])
   const [localSearch, setLocalSearch] = useState('')
+  
+  // --- STATE FOR CREATION & SUBSCRIPTIONS ---
   const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [canSell, setCanSell] = useState(false)
+  const [showPaywall, setShowPaywall] = useState(false)
+  const [showPlansModal, setShowPlansModal] = useState(false)
+
   const [uploading, setUploading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [newProduct, setNewProduct] = useState({ name: '', description: '', price: '', imageFile: null as File | null, videoFile: null as File | null })
@@ -87,19 +96,38 @@ export default function MallFeed({ session, onChat, onShare, globalSearch = '', 
   const [addedIds, setAddedIds] = useState<Set<number>>(new Set())
   const [checkoutItem, setCheckoutItem] = useState<any>(null)
 
+  // 1. CHECK PERMISSIONS ON LOAD
+  useEffect(() => {
+      const checkAccess = async () => {
+          if (!session?.user) return
+          
+          const { data } = await supabase
+              .from('profiles')
+              .select('verified_tier')
+              .eq('id', session.user.id)
+              .single()
+
+          if (data?.verified_tier && TIERS_WITH_SELLER_ACCESS.includes(data.verified_tier)) {
+              setCanSell(true)
+          } else {
+              setCanSell(false)
+          }
+      }
+      checkAccess()
+  }, [session])
+
   async function fetchCart() {
       if (!session?.user?.id) return;
       
-      const { data, error } = await supabase
+      const { data } = await supabase
           .from('cart_items')
-          .select('id, quantity, product:products(*)') // Join with products table
+          .select('id, quantity, product:products(*)') 
           .eq('user_id', session.user.id)
       
       if (data) {
-          // Transform DB data to match UI structure
           const formattedCart = data.map((item: any) => ({
-              ...item.product,      // Spread product details (name, price, image, etc.)
-              cart_id: item.id,     // Store the cart_items primary key for updates
+              ...item.product,      
+              cart_id: item.id,     
               quantity: item.quantity
           }))
           setCart(formattedCart)
@@ -171,7 +199,7 @@ export default function MallFeed({ session, onChat, onShare, globalSearch = '', 
               video_url: videoUrl 
           }
           if (businessId) payload.business_id = businessId
-          const { error: dbError } = await supabase.from('products').insert({ seller_id: session.user.id, name: newProduct.name, description: newProduct.description, price: parseFloat(newProduct.price), image_url: imgData.publicUrl, video_url: videoUrl }); 
+          const { error: dbError } = await supabase.from('products').insert(payload); 
           if (dbError) throw dbError; 
           setUploading(false); setSuccess(true); 
           setTimeout(() => { setIsCreateOpen(false); setSuccess(false); setNewProduct({ name: '', description: '', price: '', imageFile: null, videoFile: null }); setPreviews({ image: '', video: '' }); fetchProducts() }, 1500) 
@@ -184,71 +212,53 @@ export default function MallFeed({ session, onChat, onShare, globalSearch = '', 
       setProducts(prev => prev.filter(p => p.id !== id));
       if(selectedProduct?.id === id) setSelectedProduct(null);
   }
-const addToCart = async (product: any) => {
-      // 1. Optimistic UI update (optional, but feels faster)
+  
+  const addToCart = async (product: any) => {
       setAddedIds(prev => new Set(prev).add(product.id)); 
       
-      // 2. Check if item exists in user's cart in DB
-      const { data: existing } = await supabase
-          .from('cart_items')
-          .select('id, quantity')
-          .eq('user_id', session.user.id)
-          .eq('product_id', product.id)
-          .single()
+      const { data: existing } = await supabase.from('cart_items').select('id, quantity').eq('user_id', session.user.id).eq('product_id', product.id).single()
 
       if (existing) {
-          // Update Quantity
-          await supabase
-              .from('cart_items')
-              .update({ quantity: existing.quantity + 1 })
-              .eq('id', existing.id)
+          await supabase.from('cart_items').update({ quantity: existing.quantity + 1 }).eq('id', existing.id)
       } else {
-          // Insert New Item
-          await supabase
-              .from('cart_items')
-              .insert({ user_id: session.user.id, product_id: product.id, quantity: 1 })
+          await supabase.from('cart_items').insert({ user_id: session.user.id, product_id: product.id, quantity: 1 })
       }
 
-      // 3. Refresh Cart State from DB
       await fetchCart()
-      
       setTimeout(() => setAddedIds(prev => { const n = new Set(prev); n.delete(product.id); return n }), 2000) 
   }
-const updateCartQty = async (cartItemId: number, delta: number) => {
-      // Find current qty locally to calculate new qty
+  
+  const updateCartQty = async (cartItemId: number, delta: number) => {
       const item = cart.find(c => c.cart_id === cartItemId)
       if(!item) return
-
       const newQty = Math.max(1, item.quantity + delta)
-      
-      // Update DB
       await supabase.from('cart_items').update({ quantity: newQty }).eq('id', cartItemId)
-      
-      // Refresh
       fetchCart()
   }  
+
   const removeFromCart = async (cartItemId: number) => {
-      // Delete from DB
       await supabase.from('cart_items').delete().eq('id', cartItemId)
-      // Refresh
       fetchCart()
   }
 
   const getMediaList = (product: any) => { const list = [{ type: 'image', url: product.image_url }]; if (product.video_url) list.unshift({ type: 'video', url: product.video_url }); return list }
-const handleCartCheckout = () => {
+  
+  const handleCartCheckout = () => {
       const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
       if (total === 0) return
-      
-      // Create a bundled item for the payment modal
-      const bundledItem = {
-          id: 0, // Placeholder ID for the whole cart
-          name: `Cart Checkout (${cart.length} items)`,
-          price: total,
-          description: cart.map(i => `${i.quantity}x ${i.name}`).join(', ')
-      }
-      
+      const bundledItem = { id: 0, name: `Cart Checkout (${cart.length} items)`, price: total, description: cart.map(i => `${i.quantity}x ${i.name}`).join(', ') }
       setCheckoutItem(bundledItem)
   }
+
+  // --- NEW: HANDLE CLICK ON SELL BUTTON ---
+  const handleSellClick = () => {
+      if (canSell) {
+          setIsCreateOpen(true)
+      } else {
+          setShowPaywall(true)
+      }
+  }
+
   return (
     <div className="space-y-6">
         {checkoutItem && <PaymentModal isOpen={!!checkoutItem} onClose={() => setCheckoutItem(null)} plan={checkoutItem} type="product" session={session} />}
@@ -256,16 +266,78 @@ const handleCartCheckout = () => {
         <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-3xl shadow-sm border border-zinc-100">
             <div className="relative w-full md:w-96"><Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" /><Input placeholder="Search products..." className="pl-9 bg-zinc-50 border-none rounded-full" value={localSearch} onChange={e => setLocalSearch(e.target.value)}/></div>
             <div className="flex items-center gap-3">
-                {/* CART DRAWER INTEGRATION */}
-                <CartDrawer 
-                    cart={cart} 
-                    onUpdateQty={updateCartQty} 
-                    onRemove={removeFromCart} 
-                    onCheckout={handleCartCheckout} // <--- CONNECTED HERE
-                />                <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                    <DialogTrigger asChild><Button className="rounded-full bg-zinc-900 hover:bg-black text-white"><Plus className="w-4 h-4 mr-2 text-yellow-400"/> Sell Item</Button></DialogTrigger>
-                    <DialogContent>{success ? (<div className="h-[400px] flex flex-col items-center justify-center text-center"><div className="h-20 w-20 bg-green-100 rounded-full flex items-center justify-center mb-4"><CheckCircle className="w-10 h-10 text-green-600" /></div><h3 className="text-2xl font-bold">Listed!</h3></div>) : (<> <DialogHeader><DialogTitle>List a Product</DialogTitle></DialogHeader><div className="space-y-4 pt-4"><div className="flex gap-4"><div className={`flex-1 aspect-square rounded-xl border-2 ${previews.image ? 'border-solid border-yellow-400' : 'border-dashed border-zinc-200'} bg-zinc-50 relative overflow-hidden group`}>{previews.image ? <><img src={previews.image} className="w-full h-full object-cover" /><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"><Button size="icon" variant="destructive" onClick={() => clearFile('image')}><X className="w-4 h-4"/></Button></div></> : <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer"><ImageIcon className="w-8 h-8 text-zinc-300 mb-2"/><span className="text-xs font-bold text-zinc-500">Image</span><input type="file" accept="image/*" className="hidden" onChange={handleImageSelect} /></label>}</div><div className={`flex-1 aspect-square rounded-xl border-2 ${previews.video ? 'border-solid border-yellow-400' : 'border-dashed border-zinc-200'} bg-zinc-50 relative overflow-hidden group`}>{previews.video ? <><div className="w-full h-full bg-black flex items-center justify-center"><VideoIcon className="w-8 h-8 text-white" /></div><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"><Button size="icon" variant="destructive" onClick={() => clearFile('video')}><X className="w-4 h-4"/></Button></div></> : <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer"><UploadCloud className="w-8 h-8 text-zinc-300 mb-2"/><span className="text-xs font-bold text-zinc-500">Video</span><input type="file" accept="video/*" className="hidden" onChange={handleVideoSelect} /></label>}</div></div><Input placeholder="Product Name" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} className="focus-visible:ring-yellow-400"/><Textarea placeholder="Description..." value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} className="resize-none focus-visible:ring-yellow-400"/><div className="relative"><span className="absolute left-3 top-2.5 text-zinc-500 font-bold">$</span><Input type="number" placeholder="Price" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} className="pl-7 focus-visible:ring-yellow-400"/></div><Button onClick={handleCreate} disabled={uploading} className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold h-12">{uploading ? <Loader2 className="animate-spin"/> : "List Item"}</Button></div></>)}</DialogContent>
+                <CartDrawer cart={cart} onUpdateQty={updateCartQty} onRemove={removeFromCart} onCheckout={handleCartCheckout} />
+                
+                {/* --- MODIFIED SELL BUTTON --- */}
+                <Button 
+                    onClick={handleSellClick} 
+                    className="rounded-full bg-zinc-900 hover:bg-black text-white"
+                >
+                    <Plus className="w-4 h-4 mr-2 text-yellow-400"/> 
+                    Sell Item 
+                    {!canSell && <Lock className="w-3 h-3 ml-2 text-zinc-500" />}
+                </Button>
+
+                {/* --- LISTING FORM DIALOG (Only opens if allowed) --- */}
+                <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                    <DialogContent>
+                        {success ? (
+                            <div className="h-[400px] flex flex-col items-center justify-center text-center">
+                                <div className="h-20 w-20 bg-green-100 rounded-full flex items-center justify-center mb-4"><CheckCircle className="w-10 h-10 text-green-600" /></div>
+                                <h3 className="text-2xl font-bold">Listed!</h3>
+                            </div>
+                        ) : (
+                            <> 
+                                <DialogHeader><DialogTitle>List a Product</DialogTitle></DialogHeader>
+                                <div className="space-y-4 pt-4">
+                                    <div className="flex gap-4"><div className={`flex-1 aspect-square rounded-xl border-2 ${previews.image ? 'border-solid border-yellow-400' : 'border-dashed border-zinc-200'} bg-zinc-50 relative overflow-hidden group`}>{previews.image ? <><img src={previews.image} className="w-full h-full object-cover" /><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"><Button size="icon" variant="destructive" onClick={() => clearFile('image')}><X className="w-4 h-4"/></Button></div></> : <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer"><ImageIcon className="w-8 h-8 text-zinc-300 mb-2"/><span className="text-xs font-bold text-zinc-500">Image</span><input type="file" accept="image/*" className="hidden" onChange={handleImageSelect} /></label>}</div><div className={`flex-1 aspect-square rounded-xl border-2 ${previews.video ? 'border-solid border-yellow-400' : 'border-dashed border-zinc-200'} bg-zinc-50 relative overflow-hidden group`}>{previews.video ? <><div className="w-full h-full bg-black flex items-center justify-center"><VideoIcon className="w-8 h-8 text-white" /></div><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"><Button size="icon" variant="destructive" onClick={() => clearFile('video')}><X className="w-4 h-4"/></Button></div></> : <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer"><UploadCloud className="w-8 h-8 text-zinc-300 mb-2"/><span className="text-xs font-bold text-zinc-500">Video</span><input type="file" accept="video/*" className="hidden" onChange={handleVideoSelect} /></label>}</div></div>
+                                    <Input placeholder="Product Name" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} className="focus-visible:ring-yellow-400"/>
+                                    <Textarea placeholder="Description..." value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} className="resize-none focus-visible:ring-yellow-400"/>
+                                    <div className="relative"><span className="absolute left-3 top-2.5 text-zinc-500 font-bold">$</span><Input type="number" placeholder="Price" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} className="pl-7 focus-visible:ring-yellow-400"/></div>
+                                    <Button onClick={handleCreate} disabled={uploading} className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold h-12">{uploading ? <Loader2 className="animate-spin"/> : "List Item"}</Button>
+                                </div>
+                            </>
+                        )}
+                    </DialogContent>
                 </Dialog>
+
+                {/* --- PAYWALL DIALOG (Trap) --- */}
+                <Dialog open={showPaywall} onOpenChange={setShowPaywall}>
+                    <DialogContent className="sm:max-w-md bg-white rounded-3xl border-none p-0 overflow-hidden">
+                        <div className="bg-zinc-900 p-8 text-center text-white relative overflow-hidden">
+                            <div className="absolute top-0 left-0 h-32 w-32 bg-blue-500/20 rounded-full blur-2xl"></div>
+                            <button onClick={() => setShowPaywall(false)} className="absolute top-4 right-4 text-white/50 hover:text-white"><X className="h-6 w-6"/></button>
+                            
+                            <div className="mx-auto bg-white/10 w-16 h-16 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-sm border border-white/10">
+                                <Store className="h-8 w-8 text-blue-400" />
+                            </div>
+                            
+                            <DialogTitle className="text-2xl font-black">Become a Seller</DialogTitle>
+                            <p className="text-zinc-400 mt-2 text-sm">Selling in the Global Mall is exclusive to Verified Users.</p>
+                        </div>
+                        
+                        <div className="p-8 space-y-4">
+                            <div className="flex items-center gap-4 p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
+                                <ShieldCheck className="h-8 w-8 text-blue-600" />
+                                <div className="flex-1">
+                                    <h4 className="font-bold text-zinc-900">Activate Free Trial</h4>
+                                    <p className="text-xs text-zinc-600">Start selling today for free</p>
+                                </div>
+                                <div className="font-bold text-lg text-zinc-900">$0.00</div>
+                            </div>
+
+                            <Button 
+                                onClick={() => { setShowPaywall(false); setShowPlansModal(true); }}
+                                className="w-full h-12 rounded-xl bg-zinc-900 hover:bg-black text-white font-bold"
+                            >
+                                Get Verified to Sell
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+                {/* --- SUBSCRIPTION PLANS MODAL --- */}
+                <SubscriptionPlans isOpen={showPlansModal} onClose={() => setShowPlansModal(false)} session={session} />
             </div>
         </div>
 
@@ -279,7 +351,6 @@ const handleCartCheckout = () => {
                             {product.video_url && <div className="absolute top-3 right-3 bg-black/50 p-1.5 rounded-full text-white"><Play className="w-3 h-3 fill-current" /></div>}
                             <div className="absolute bottom-3 left-3 bg-white/90 px-3 py-1 rounded-full text-xs font-bold text-zinc-900 shadow-sm">${product.price}</div>
                             
-                            {/* --- ADDED SHARE BUTTON ON CARD --- */}
                             <Button 
                                 size="icon" 
                                 className="absolute top-3 right-3 rounded-full bg-white/90 hover:bg-white text-zinc-900 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-10" 
@@ -312,7 +383,6 @@ const handleCartCheckout = () => {
                             <div className="p-8 border-b border-zinc-50 flex justify-between items-start">
                                 <div><h2 className="text-3xl font-black text-zinc-900 leading-tight mb-2">{selectedProduct.name}</h2><p className="text-4xl font-bold text-yellow-600">${selectedProduct.price}</p></div>
                                 <div className="flex gap-2">
-                                    {/* --- ADDED SHARE BUTTON IN MODAL --- */}
                                     <Button variant="outline" size="icon" className="rounded-full border-zinc-200 hover:bg-yellow-50 hover:border-yellow-300" onClick={() => onShare(selectedProduct)}>
                                         <Share2 className="w-4 h-4"/>
                                     </Button>

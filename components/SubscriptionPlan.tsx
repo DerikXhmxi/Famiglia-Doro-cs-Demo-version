@@ -2,11 +2,11 @@
 
 import { useState } from "react"
 import { Check, ShieldCheck, X } from "lucide-react"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
-// import { ScrollArea } from "@/components/ui/scroll-area" // Optional: using native div for reliable horizontal scroll
+// 1. ADD DialogTitle TO IMPORTS
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import PaymentModal from "./PaymentModal" 
 
-// --- PLAN CONFIGURATION ---
+// --- CLEANED PLANS CONFIGURATION ---
 const PLANS = [
     {
         name: "Free Trial",
@@ -28,7 +28,7 @@ const PLANS = [
         duration: "/mo",
         features: [
             "Global Mall Seller", 
-            "Freedom of Speech", 
+            "Freedom of Emoji", 
             "Limited Hub Access"
         ],
         color: "bg-orange-400 text-white",
@@ -68,12 +68,9 @@ const PLANS = [
         price: "3.99",
         duration: "/mo",
         features: [
-"Global Mall Seller", 
+            "Global Mall Seller", 
             "Business Page Creation", 
             "Create Private Group", 
-        
-            "Global Mall Seller", 
-            "Freedom of Emoji", 
             "Freedom of Emoji (Level 2)", 
             "Some SuiteHub Access"
         ],
@@ -86,7 +83,7 @@ const PLANS = [
         price: "5.99",
         duration: "/mo",
         features: [
-            "All Previous Features",
+            "All Verified User Features",
             "Go Live Feature"
         ],
         color: "bg-red-600 text-white",
@@ -98,7 +95,7 @@ const PLANS = [
         price: "8.99",
         duration: "/mo",
         features: [
-            "All Previous Features",
+            "All Verified Live Features",
             "Content Upload"
         ],
         color: "bg-purple-600 text-white",
@@ -111,7 +108,9 @@ const PLANS = [
         duration: "/mo",
         features: [
             "Content Upload",
-            "No Live Feature" 
+            "Global Mall Seller",
+            "Business Page Creation",
+            "NO Live Feature" 
         ],
         color: "bg-pink-500 text-white",
         tierId: "verified_artist",
@@ -122,8 +121,7 @@ const PLANS = [
         price: "24.99",
         duration: "/mo",
         features: [
-            "Private Groups",
-            "Mall Seller",
+            "Private Groups & Mall Seller",
             "Business Page Creation",
             "Freedom of Emoji (Level 2)",
             "Some SuiteHub Features",
@@ -152,7 +150,8 @@ const PLANS = [
         duration: "/mo",
         features: [
             "All Features",
-            "All SuiteHub Access"
+            "All SuiteHub Access",
+            "Go Live & Content Upload"
         ],
         color: "bg-emerald-600 text-white",
         tierId: "suitehub_access",
@@ -164,7 +163,9 @@ const PLANS = [
         duration: "/mo",
         features: [
             "All Features",
-            "No Live"
+            "All SuiteHub Access",
+            "Content Upload",
+            "NO Live Feature"
         ],
         color: "bg-gray-800 text-white",
         tierId: "all_no_live",
@@ -176,7 +177,8 @@ const PLANS = [
         duration: "/mo",
         features: [
             "All Access",
-            "No SuiteHub"
+            "Go Live & Content Upload",
+            "NO SuiteHub Access"
         ],
         color: "bg-black text-yellow-400 border border-yellow-400",
         tierId: "ultimate_no_suite",
@@ -190,7 +192,6 @@ export default function SubscriptionPlans({ isOpen, onClose, session }: { isOpen
     return (
         <>
             <Dialog open={isOpen} onOpenChange={onClose}>
-                {/* 1. INCREASED MAX-WIDTH for horizontal view */}
                 <DialogContent className="max-w-5xl h-[80vh] p-0 border-none bg-zinc-50 rounded-3xl overflow-hidden flex flex-col">
                     <div className="bg-white p-6 text-center border-b border-zinc-100 relative shrink-0">
                         <button onClick={onClose} className="absolute top-4 right-4 text-zinc-400 hover:text-black"><X className="w-6 h-6" /></button>
@@ -198,23 +199,25 @@ export default function SubscriptionPlans({ isOpen, onClose, session }: { isOpen
                             <ShieldCheck className="w-8 h-8 text-yellow-600" />
                             <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white p-1 rounded-full border-2 border-white"><Check className="w-3 h-3" /></div>
                         </div>
-                        <h2 className="text-2xl font-black text-zinc-900">Get Verified</h2>
+                        
+                        {/* 2. REPLACED h2 WITH DialogTitle */}
+                        <DialogTitle className="text-2xl font-black text-zinc-900">
+                            Get Verified
+                        </DialogTitle>
+                        
                         <p className="text-sm text-zinc-500 mt-1">Select a badge to unlock exclusive creator tools</p>
                     </div>
 
-                    {/* 2. HORIZONTAL SCROLL CONTAINER */}
                     <div className="flex-1 overflow-x-auto overflow-y-hidden p-6 bg-zinc-100/50">
                         <div className="flex gap-4 h-full items-stretch pb-4"> 
                             {PLANS.map((plan) => (
                                 <div 
                                     key={plan.name} 
                                     onClick={() => setSelectedPlan(plan)} 
-                                    /* 3. FIXED WIDTH CARDS so they flow horizontally */
                                     className={`relative group p-5 rounded-3xl min-w-[320px] w-[320px] flex flex-col transition-all hover:scale-[1.02] cursor-pointer shadow-sm hover:shadow-xl border border-transparent hover:border-black/5 ${plan.color}`}
                                 >
                                     <div className="flex justify-between items-start mb-4">
                                         <div className="flex items-center gap-3">
-                                            {/* Badge Image */}
                                             {plan.badgeImg ? (
                                                 <img 
                                                     src={plan.badgeImg} 
@@ -261,13 +264,14 @@ export default function SubscriptionPlans({ isOpen, onClose, session }: { isOpen
                 </DialogContent>
             </Dialog>
 
-            {/* PAYMENT MODAL OVERLAY */}
-            <PaymentModal 
-                isOpen={!!selectedPlan} 
-                onClose={() => setSelectedPlan(null)} 
-                plan={selectedPlan} 
-                session={session} 
-            />
+            {selectedPlan && (
+                <PaymentModal 
+                    isOpen={!!selectedPlan} 
+                    onClose={() => setSelectedPlan(null)} 
+                    plan={selectedPlan} 
+                    session={session} 
+                />
+            )}
         </>
     )
 }

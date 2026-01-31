@@ -131,7 +131,7 @@ function RealPostsFeed(
     }, [deepLink])
     const tierLevel = 5;
     const isVip = tierLevel >= 5 // Define what tier counts as "VIP"
-const { currentPack, accessiblePacks } = useEmojiSystem(session?.user?.id, isVip)
+    const { currentPack, accessiblePacks } = useEmojiSystem(session?.user?.id, isVip)
     // const { currentPack } = useEmojiSystem(session?.user?.id)
     useEffect(() => {
         fetchPosts()
@@ -216,32 +216,39 @@ const { currentPack, accessiblePacks } = useEmojiSystem(session?.user?.id, isVip
     }
 
     const handleReaction = async (emoji: string, postId: number) => {
-        // 1. Optimistic Update (Instant UI feedback)
+        // 1. Optimistic Update (Update UI instantly)
         setPosts(prev => prev.map(p => {
             if (p.id !== postId) return p
 
-            // If clicking the SAME emoji -> Toggle OFF
+            // Toggle Logic: If clicking same emoji -> remove it
             if (p.myReaction === emoji) {
                 return { ...p, myReaction: null, likeCount: Math.max(0, p.likeCount - 1) }
             }
-            // If switching emoji -> Switch it (count stays same unless it was null before)
+
+            // Switch Logic: If changing emoji -> update it
             const newCount = p.myReaction ? p.likeCount : p.likeCount + 1
             return { ...p, myReaction: emoji, likeCount: newCount }
         }))
 
         // 2. Database Update
-        // Check if we are removing or adding
         const currentPost = posts.find(p => p.id === postId)
+
         if (currentPost?.myReaction === emoji) {
-            // Remove reaction
+            // DELETE REACTION
             await supabase.from('post_reactions').delete().match({ post_id: postId, user_id: session.user.id })
         } else {
-            // Upsert (Insert or Update if exists) - Requires the SQL constraint from Step 1
-            await supabase.from('post_reactions').upsert({
+            // UPSERT REACTION (Insert or Update)
+            // Note: 'emoji' variable here contains the PATH string (e.g., "/icons/crown.png")
+            const { error } = await supabase.from('post_reactions').upsert({
                 post_id: postId,
                 user_id: session.user.id,
                 emoji: emoji
             }, { onConflict: 'user_id, post_id' })
+
+            // Replace your error logging line with this:
+            if (error) {
+                console.error("FULL DB ERROR:", JSON.stringify(error, null, 2))
+            }
         }
     }
 
@@ -285,8 +292,11 @@ const { currentPack, accessiblePacks } = useEmojiSystem(session?.user?.id, isVip
                                     <div className="flex -space-x-1 ml-2">
                                         {Object.entries(post.reactionCounts).slice(0, 4).map(([emoji, count]: any) => (
                                             <div key={emoji} className="bg-zinc-50 rounded-full border border-white w-6 h-6 flex items-center justify-center text-xs shadow-sm z-10" title={`${count} reactions`}>
-                                                {emoji}
-                                            </div>
+                                                {(emoji.startsWith('/') || emoji.startsWith('http')) ? (
+                                                    <img src={emoji} className="w-4 h-4 object-contain" />
+                                                ) : (
+                                                    <span>{emoji}</span>
+                                                )}                                            </div>
                                         ))}
                                         {Object.keys(post.reactionCounts).length > 4 && (
                                             <div className="bg-zinc-100 rounded-full border border-white w-6 h-6 flex items-center justify-center text-[9px] font-bold text-zinc-500 z-0">
@@ -512,11 +522,11 @@ export default function Page() {
                         <NavItem icon={<MessageSquare />} label={t('messages')} active={activeTab === 'chat'} onClick={() => setActiveTab('chat')} />
                         <NavItem activeImg='/icons/snippet.jpeg' inactiveImg='/icons/snippet.jpeg' icon={<Film />} label={t('shorts')} active={activeTab === 'shorts'} onClick={() => setActiveTab('shorts')} />
                         <NavItem activeImg='/icons/group.png' inactiveImg='/icons/group.png' icon={<Users />} label={t('groups')} active={activeTab === 'groups'} onClick={() => setActiveTab('groups')} />
-                        <NavItem activeImg='/icons/video_icon.svg'inactiveImg='/icons/video_icon.svg' icon={<Zap />} label={t('live')} active={activeTab === 'live'} onClick={() => setActiveTab('live')} />
+                        <NavItem activeImg='/icons/video_icon.svg' inactiveImg='/icons/video_icon.svg' icon={<Zap />} label={t('live')} active={activeTab === 'live'} onClick={() => setActiveTab('live')} />
                         <NavItem activeImg='/icons/event.png' inactiveImg='/icons/event.png' icon={<Calendar />} label={t('events')} active={activeTab === 'events'} onClick={() => setActiveTab('events')} />
                         <NavItem activeImg='/icons/global_nav.png' inactiveImg='/icons/global_nav.png' icon={<ShoppingBag />} label={t('globalMall')} active={activeTab === 'mall'} onClick={() => setActiveTab('mall')} />
                         <NavItem activeImg='/icons/menu_18.png' inactiveImg='/icons/menu_18.png' icon={<Grid />} label={t('suiteHub')} active={activeTab === 'suite'} onClick={() => setActiveTab('suite')} />
-                        <NavItem activeImg='/icons/logo_nav.png' inactiveImg='/icons/logo_nav.png'  icon={<Tv />} label={t('tvNetwork')} active={activeTab === 'tv'} onClick={() => setActiveTab('tv')} />
+                        <NavItem activeImg='/icons/logo_nav.png' inactiveImg='/icons/logo_nav.png' icon={<Tv />} label={t('tvNetwork')} active={activeTab === 'tv'} onClick={() => setActiveTab('tv')} />
                         <div className="my-4 h-px bg-zinc-200/50 mx-4"></div>
                         <NavItem activeImg='/icons/home1.jpeg' inactiveImg='/icons/home1.jpeg' icon={<Briefcase />} label={t('bizNetworx')} active={activeTab === 'biz'} onClick={() => setActiveTab('biz')} />
                         <NavItem activeImg='/icons/home2.jpeg' inactiveImg='/icons/home2.jpeg' icon={<Gamepad2 />} label={t('kidzHQ')} active={activeTab === 'kidz'} onClick={() => setActiveTab('kidz')} />
@@ -534,7 +544,7 @@ export default function Page() {
                         <Tabs value={activeTab} onValueChange={setActiveTab} className=" w-full">
                             {activeTab !== 'chat' && (
                                 <TabsList id="app-tabs"
-                                    className="w-full bg-white p-2 rounded-2xl shadow-sm border border-zinc-100 h-auto grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-2 mb-6">                                    
+                                    className="w-full bg-white p-2 rounded-2xl shadow-sm border border-zinc-100 h-auto grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-2 mb-6">
                                     <TabsTrigger
                                         value="feed" className="group flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"                                    >
                                         <img
@@ -684,7 +694,7 @@ export default function Page() {
                                     description="Promotion"
                                 />
                             </TabsContent>
-                             <TabsContent value="Train-Station">
+                            <TabsContent value="Train-Station">
                                 <ComingSoon
                                     title={t('Train Station')}
                                     icon={Gamepad2}
@@ -699,8 +709,8 @@ export default function Page() {
                             <SidebarChatWidget session={session} onChat={openPrivateChat} />
                             <SuggestedFriends session={session} onViewProfile={handleViewProfile} />
                             {/* <div className="rounded-3xl bg-white p-6 shadow-sm border border-zinc-100"> */}
-                                {/* <h3 className="font-bold text-zinc-900 mb-4">{t('widget_trending')}</h3> */}
-                                {/* <div className="space-y-3">{['#FamigliaDoro', '#GoldStandard', '#CreatorEconomy'].map((tag) => (<div key={tag} className="flex justify-between items-center group cursor-pointer"><span className="text-sm text-zinc-600 group-hover:text-yellow-600 transition-colors">{tag}</span><span className="text-xs text-zinc-400">2.5k posts</span></div>))}</div> */}
+                            {/* <h3 className="font-bold text-zinc-900 mb-4">{t('widget_trending')}</h3> */}
+                            {/* <div className="space-y-3">{['#FamigliaDoro', '#GoldStandard', '#CreatorEconomy'].map((tag) => (<div key={tag} className="flex justify-between items-center group cursor-pointer"><span className="text-sm text-zinc-600 group-hover:text-yellow-600 transition-colors">{tag}</span><span className="text-xs text-zinc-400">2.5k posts</span></div>))}</div> */}
                             {/* </div> */}
                         </aside>
                     )}
