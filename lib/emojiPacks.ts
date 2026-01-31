@@ -1,285 +1,382 @@
+// src/lib/EmojiData.ts
+
 export type EmojiItem = {
-    icon: string;
+    icon: string;       // This will now be the FILE PATH (e.g., '/icons/custom/smile.png')
     name: string;
     meaning: string;
-    isCustomImage?: boolean; 
+    isCustomImage: boolean; // Set to true for your images
 };
 
 export type EmojiPack = {
     id: string;
     name: string;
     description: string;
+    level: 1 | 2;       // 1 = Free, 2 = VIP
     emojis: EmojiItem[];
 };
 
 export const EMOJI_PACKS: Record<string, EmojiPack> = {
-    classic: {
-        id: 'classic',
-        name: 'Standard',
-        description: 'The universal language of the internet. Classic reactions for every moment.',
+    // --- LEVEL 1: FREE / BASIC CUSTOM PACK ---
+    defaults: {
+        id: 'defaults',
+        name: 'Starter Pack',
+        description: 'Basic custom reactions available to everyone.',
+        level: 2, 
         emojis: [
-            // --- POSITIVE FACES ---
-            { icon: '👍', name: 'Thumbs Up', meaning: 'Approval / Yes' },
-            { icon: '❤️', name: 'Heart', meaning: 'Love' },
-            { icon: '😂', name: 'Joy', meaning: 'Tears of Joy' },
-            { icon: '😮', name: 'Wow', meaning: 'Surprised' },
-            { icon: '😢', name: 'Sad', meaning: 'Upset' },
-            { icon: '😡', name: 'Angry', meaning: 'Mad' },
-            { icon: '👏', name: 'Clap', meaning: 'Appreciation' },
-            { icon: '🔥', name: 'Fire', meaning: 'Hot / Lit' },
-            { icon: '🎉', name: 'Party', meaning: 'Celebration' },
-            { icon: '🤔', name: 'Thinking', meaning: 'Curious' },
-            { icon: '🤣', name: 'ROFL', meaning: 'Rolling Laughing' },
-            { icon: '🙂', name: 'Smile', meaning: 'Friendly' },
-            { icon: '🥰', name: 'Loved', meaning: 'Feeling Loved' },
-            { icon: '😍', name: 'Heart Eyes', meaning: 'Adoration' },
-            { icon: '🤩', name: 'Star Eyes', meaning: 'Impressed' },
-            { icon: '😎', name: 'Cool', meaning: 'Chilled' },
-            { icon: '🥳', name: 'Celebrate', meaning: 'Party Time' },
-            { icon: '🤯', name: 'Mind Blown', meaning: 'Shocked' },
-            { icon: '😱', name: 'Scream', meaning: 'Terrified' },
-            { icon: '🤗', name: 'Hug', meaning: 'Warmth' },
-            { icon: '🫡', name: 'Salute', meaning: 'Respect' },
-            { icon: '🫠', name: 'Melting', meaning: 'Overwhelmed' },
-            { icon: '🥲', name: 'Tear Smile', meaning: 'Bittersweet' },
-            { icon: '😋', name: 'Yum', meaning: 'Tasty' },
-            { icon: '😜', name: 'Wink', meaning: 'Playful' },
-            { icon: '🤫', name: 'Shh', meaning: 'Quiet' },
-            { icon: '🤥', name: 'Liar', meaning: 'Untruth' },
-            { icon: '🙄', name: 'Roll', meaning: 'Whatever' },
-            { icon: '😬', name: 'Grimace', meaning: 'Awkward' },
-            { icon: '🤢', name: 'Sick', meaning: 'Disgust' },
-            { icon: '🤧', name: 'Sneeze', meaning: 'Bless you' },
-            { icon: '🥵', name: 'Hot', meaning: 'Overheated' },
-            { icon: '🥶', name: 'Cold', meaning: 'Freezing' },
-            { icon: '🥴', name: 'Woozy', meaning: 'Drunk/Dizzy' },
-            { icon: '😈', name: 'Devil', meaning: 'Naughty' },
-            { icon: '🤡', name: 'Clown', meaning: 'Foolish' },
-            { icon: '💩', name: 'Poop', meaning: 'Crap' },
-            { icon: '👻', name: 'Ghost', meaning: 'Spooky' },
-            { icon: '💀', name: 'Skull', meaning: 'Dead' },
-            { icon: '👽', name: 'Alien', meaning: 'Weird' },
-            { icon: '🤖', name: 'Robot', meaning: 'Automated' },
-            // --- HANDS & BODY ---
-            { icon: '👋', name: 'Wave', meaning: 'Hello/Bye' },
-            { icon: '🤚', name: 'Stop', meaning: 'Halt' },
-            { icon: '👌', name: 'OK', meaning: 'Perfect' },
-            { icon: '✌️', name: 'Peace', meaning: 'Victory' },
-            { icon: '🤞', name: 'Fingers Crossed', meaning: 'Hope' },
-            { icon: '🤟', name: 'Love You', meaning: 'ILY' },
-            { icon: '🤘', name: 'Rock', meaning: 'Metal' },
-            { icon: '🤙', name: 'Call Me', meaning: 'Hang Loose' },
-            { icon: '🤛', name: 'Fist Bump', meaning: 'Respect' },
-            { icon: '🤝', name: 'Handshake', meaning: 'Agreement' },
-            { icon: '🙏', name: 'Pray', meaning: 'Thank You' },
-            { icon: '💪', name: 'Muscle', meaning: 'Strong' },
-            { icon: '🧠', name: 'Brain', meaning: 'Smart' },
-            { icon: '👀', name: 'Eyes', meaning: 'Looking' },
-            { icon: '💋', name: 'Kiss', meaning: 'Smooch' },
-            // --- HEARTS ---
-            { icon: '🧡', name: 'Orange Heart', meaning: 'Friendship' },
-            { icon: '💛', name: 'Yellow Heart', meaning: 'Happiness' },
-            { icon: '💚', name: 'Green Heart', meaning: 'Envy/Nature' },
-            { icon: '💙', name: 'Blue Heart', meaning: 'Loyalty' },
-            { icon: '💜', name: 'Purple Heart', meaning: 'Royalty' },
-            { icon: '🖤', name: 'Black Heart', meaning: 'Sorrow' },
-            { icon: '💔', name: 'Broken Heart', meaning: 'Heartbreak' },
-            { icon: '💯', name: '100', meaning: 'Perfect' },
+            { 
+                icon: '/icons/emojis/blocked.png', 
+                name: 'Thumbs Up', 
+                meaning: 'Approval', 
+                isCustomImage: true 
+            },
+            { 
+                icon: '/icons/emojis/boring.png', 
+                name: 'Heart', 
+                meaning: 'Love', 
+                isCustomImage: true 
+            },
+            { 
+                icon: '/icons/emojis/cap.png', 
+                name: 'Laugh', 
+                meaning: 'Joy', 
+                isCustomImage: true 
+            },
+             { 
+                icon: '/icons/emojis/bull_shit.png', 
+                name: 'Laugh', 
+                meaning: 'Joy', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/business_lifetime.png', 
+                name: 'Laugh', 
+                meaning: 'Joy', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/challenge.png', 
+                name: 'Laugh', 
+                meaning: 'Joy', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/congrats.png', 
+                name: 'Laugh', 
+                meaning: 'Joy', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/cool.png', 
+                name: 'Laugh', 
+                meaning: 'Joy', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/digital_panhandler.png', 
+                name: 'Laugh', 
+                meaning: 'Joy', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/dork.png', 
+                name: 'Laugh', 
+                meaning: 'Joy', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/dumb_ass.png', 
+                name: 'Laugh', 
+                meaning: 'Joy', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/fake_news.png', 
+                name: 'Laugh', 
+                meaning: 'Joy', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/dork.png', 
+                name: 'dork', 
+                meaning: 'dork', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/good_job.png', 
+                name: 'GoodJob', 
+                meaning: 'GoodJob', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/goofy.png', 
+                name: 'GoodJob', 
+                meaning: 'GoodJob', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/graduate.png', 
+                name: 'GoodJob', 
+                meaning: 'GoodJob', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/great_idea.png', 
+                name: 'GoodJob', 
+                meaning: 'GoodJob', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/hbd.png', 
+                name: 'GoodJob', 
+                meaning: 'GoodJob', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/hi_beautiful.png', 
+                name: 'GoodJob', 
+                meaning: 'GoodJob', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/hit_it.png', 
+                name: 'GoodJob', 
+                meaning: 'GoodJob', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/hugs.png', 
+                name: 'GoodJob', 
+                meaning: 'GoodJob', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/i_challange_you.png', 
+                name: 'GoodJob', 
+                meaning: 'GoodJob', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/idk_nothing.png', 
+                name: 'GoodJob', 
+                meaning: 'GoodJob', 
+                isCustomImage: true 
+            },
+             { 
+                icon: '/icons/emojis/praying.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            },
+             { 
+                icon: '/icons/emojis/sorry.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            },
+             { 
+                icon: '/icons/emojis/stand_on_business.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            },
+             { 
+                icon: '/icons/emojis/stop_complaining.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            },
+             { 
+                icon: '/icons/emojis/stop_snitching.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            },
+             { 
+                icon: '/icons/emojis/stop.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/stopdry.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            },
         ]
     },
-    famiglia: {
-        id: 'famiglia',
-        name: 'Famiglia Lore',
-        description: 'Symbols of strength, loyalty, hierarchy, and the inner circle. For those who know.',
+
+    // --- LEVEL 2: VIP / EXCLUSIVE PACK ---
+    vip_famiglia: {
+        id: 'vip_famiglia',
+        name: 'Don Status',
+        description: 'Exclusive Famiglia symbols. Only for VIPs.',
+        level: 2,
         emojis: [
-            // --- POWER ANIMALS ---
-            { icon: '🦁', name: 'The Lion', meaning: 'Supreme Leadership' },
-            { icon: '🦅', name: 'The Eagle', meaning: 'Surveillance & Freedom' },
-            { icon: '🐺', name: 'The Wolf', meaning: 'Pack Loyalty' },
-            { icon: '🐅', name: 'The Tiger', meaning: 'Ferocity' },
-            { icon: '🦍', name: 'The Gorilla', meaning: 'Muscle / Enforcer' },
-            { icon: '🐍', name: 'The Snake', meaning: 'Betrayal / Caution' },
-            { icon: '🐎', name: 'The Stallion', meaning: 'Stamina' },
-            { icon: '🦈', name: 'The Shark', meaning: 'Ruthless Business' },
-            { icon: '🕷️', name: 'The Spider', meaning: 'Web of Connections' },
-            { icon: '🦂', name: 'The Scorpion', meaning: 'Dangerous Defense' },
-            { icon: '🦉', name: 'The Owl', meaning: 'Ancient Wisdom' },
-            { icon: '🐂', name: 'The Bull', meaning: 'Stubborn Strength' },
-            // --- HIERARCHY & WAR ---
-            { icon: '👑', name: 'Crown', meaning: 'The Boss' },
-            { icon: '🛡️', name: 'Shield', meaning: 'Protection' },
-            { icon: '⚔️', name: 'Crossed Swords', meaning: 'Conflict / War' },
-            { icon: '🗡️', name: 'Dagger', meaning: 'Stealth Attack' },
-            { icon: '🏹', name: 'Bow', meaning: 'Long Range' },
-            { icon: '🔫', name: 'Pistol', meaning: 'Action' },
-            { icon: '🧨', name: 'Dynamite', meaning: 'Explosive News' },
-            { icon: '💣', name: 'Bomb', meaning: 'Major Impact' },
-            { icon: '🩸', name: 'Blood', meaning: 'Blood Oath' },
-            { icon: '⛓️', name: 'Chains', meaning: 'Incarceration / Bond' },
-            { icon: '⚖️', name: 'Scales', meaning: 'Street Justice' },
-            { icon: '🔨', name: 'Gavel', meaning: 'The Verdict' },
-            { icon: '🏰', name: 'Castle', meaning: 'Fortress / HQ' },
-            { icon: '🏛️', name: 'Court', meaning: 'Official Business' },
-            { icon: '♟️', name: 'Pawn', meaning: 'Soldier' },
-            { icon: '🏴', name: 'Black Flag', meaning: 'No Quarter' },
-            { icon: '🚩', name: 'Red Flag', meaning: 'Warning' },
-            // --- WEALTH & CLASS ---
-            { icon: '💎', name: 'Diamond', meaning: 'Unbreakable Value' },
-            { icon: '💍', name: 'Ring', meaning: 'Commitment' },
-            { icon: '🗝️', name: 'Old Key', meaning: 'Gatekeeper' },
-            { icon: '🔒', name: 'Locked', meaning: 'Secret / Secure' },
-            { icon: '🎩', name: 'Top Hat', meaning: 'The Don' },
-            { icon: '👔', name: 'Tie', meaning: 'Formal Business' },
-            { icon: '🕶️', name: 'Shades', meaning: 'Incognito' },
-            { icon: '💼', name: 'Briefcase', meaning: ' The Deal' },
-            { icon: '📜', name: 'Scroll', meaning: 'The Code' },
-            { icon: '🖋️', name: 'Pen', meaning: 'Signed' },
-            { icon: '🍷', name: 'Wine', meaning: 'Fine Taste' },
-            { icon: '🥃', name: 'Whiskey', meaning: 'Hard Times' },
-            { icon: '🍾', name: 'Champagne', meaning: 'Success' },
-            { icon: '🥂', name: 'Cheers', meaning: 'Toast' },
-            { icon: '🍝', name: 'Pasta', meaning: 'Tradition' },
-            { icon: '🍕', name: 'Pizza', meaning: 'Family Meal' },
-            { icon: '🏎️', name: 'Race Car', meaning: 'Fast Life' },
-            { icon: '🚁', name: 'Chopper', meaning: 'Extraction' },
-            { icon: '🛥️', name: 'Yacht', meaning: 'Overseas' },
-            { icon: '🎲', name: 'Dice', meaning: 'Taking a Risk' },
-            { icon: '🃏', name: 'Joker', meaning: 'Wildcard' },
-            { icon: '🎭', name: 'Masks', meaning: 'Two-Faced' },
-            { icon: '🕯️', name: 'Candle', meaning: 'Vigil / Memory' },
-            { icon: '🗿', name: 'Stone Face', meaning: 'Omertà (Silence)' },
-        ]
-    },
-    hustle: {
-        id: 'hustle',
-        name: 'Hustle Culture',
-        description: 'For the entrepreneurs, crypto traders, builders, and grinders. Rise and grind.',
-        emojis: [
-            // --- GROWTH & MOMENTUM ---
-            { icon: '🚀', name: 'Rocket', meaning: 'To The Moon' },
-            { icon: '🔥', name: 'Fire', meaning: 'Hot Streak' },
-            { icon: '📈', name: 'Chart Up', meaning: 'Stonks / Growth' },
-            { icon: '📊', name: 'Bar Chart', meaning: 'Analytics' },
-            { icon: '📅', name: 'Calendar', meaning: 'Schedule' },
-            { icon: '✅', name: 'Check', meaning: 'Task Done' },
-            { icon: '🆕', name: 'New', meaning: 'Fresh Drop' },
-            { icon: '🆙', name: 'Up', meaning: 'Leveling Up' },
-            { icon: '🔝', name: 'Top', meaning: 'Market Leader' },
-            { icon: '🎯', name: 'Target', meaning: 'Goal Hit' },
-            { icon: '⚡', name: 'Bolt', meaning: 'Fast Execution' },
-            { icon: '🔋', name: 'Battery', meaning: 'Fully Charged' },
-            { icon: '🔌', name: 'Plug', meaning: 'Connected' },
-            { icon: '💡', name: 'Bulb', meaning: 'Big Idea' },
-            { icon: '🛠️', name: 'Tools', meaning: 'Building' },
-            { icon: '🏗️', name: 'Crane', meaning: 'Construction' },
-            { icon: '🧗', name: 'Climb', meaning: 'The Grind' },
-            { icon: '🏃', name: 'Run', meaning: 'Hustling' },
-            // --- MONEY & WEALTH ---
-            { icon: '💰', name: 'Money Bag', meaning: 'Secured the Bag' },
-            { icon: '💸', name: 'Flying Cash', meaning: 'Spending / Investing' },
-            { icon: '💳', name: 'Card', meaning: 'Credit' },
-            { icon: '💵', name: 'Dollar', meaning: 'Cash Flow' },
-            { icon: '💴', name: 'Yen', meaning: 'Global Market' },
-            { icon: '💶', name: 'Euro', meaning: 'Euro Market' },
-            { icon: '💷', name: 'Pound', meaning: 'UK Market' },
-            { icon: '🪙', name: 'Coin', meaning: 'Crypto / Token' },
-            { icon: '🏦', name: 'Bank', meaning: 'Vault' },
-            { icon: '🏧', name: 'ATM', meaning: 'Liquidity' },
-            { icon: '🧾', name: 'Receipt', meaning: 'Proof' },
-            { icon: '🛍️', name: 'Bags', meaning: 'Retail Therapy' },
-            { icon: '🛒', name: 'Cart', meaning: 'Buying the Dip' },
-            // --- STATUS & TECH ---
-            { icon: '💎', name: 'Diamond', meaning: 'Diamond Hands' },
-            { icon: '🏆', name: 'Trophy', meaning: 'Winner' },
-            { icon: '🥇', name: 'Gold Medal', meaning: 'First Place' },
-            { icon: '🥈', name: 'Silver', meaning: 'Runner Up' },
-            { icon: '🎖️', name: 'Medal', meaning: 'Achievement' },
-            { icon: '🤝', name: 'Handshake', meaning: 'Deal Closed' },
-            { icon: '💼', name: 'Briefcase', meaning: 'Work Mode' },
-            { icon: '🧠', name: 'Brain', meaning: 'Smart Move' },
-            { icon: '🎓', name: 'Cap', meaning: 'Educated' },
-            { icon: '💻', name: 'Laptop', meaning: 'Remote Work' },
-            { icon: '📱', name: 'Phone', meaning: 'Mobile Biz' },
-            { icon: '⌚', name: 'Watch', meaning: 'Time is Money' },
-            { icon: '🎙️', name: 'Mic', meaning: 'Speaking Facts' },
-            { icon: '📢', name: 'Loudspeaker', meaning: 'Announcement' },
-            { icon: '📡', name: 'Satellite', meaning: 'Global Reach' },
-            { icon: '🌐', name: 'Globe', meaning: 'Worldwide' },
-            { icon: '🏢', name: 'Office', meaning: 'Headquarters' },
-            { icon: '🏭', name: 'Factory', meaning: 'Production' },
-            { icon: '🚓', name: 'Police', meaning: 'FUD / Regulation' },
-            { icon: '🚨', name: 'Siren', meaning: 'Emergency / Alert' },
-            { icon: '🛑', name: 'Stop', meaning: 'Bear Market' },
-            { icon: '🧪', name: 'Test', meaning: 'Experiment' },
-            { icon: '🧊', name: 'Ice', meaning: 'Cold Hard Facts' },
-        ]
-    },
-    vibes: {
-        id: 'vibes',
-        name: 'Chill Vibes',
-        description: 'Aesthetic, spiritual, and relaxed reactions. Good energy only.',
-        emojis: [
-            // --- NATURE & ELEMENTS ---
-            { icon: '🌊', name: 'Wave', meaning: 'Flow State' },
-            { icon: '✨', name: 'Sparkles', meaning: 'Aesthetic / Clean' },
-            { icon: '🌵', name: 'Cactus', meaning: 'Resilient' },
-            { icon: '🌴', name: 'Palm', meaning: 'Paradise' },
-            { icon: '🌲', name: 'Evergreen', meaning: 'Timeless' },
-            { icon: '🌱', name: 'Seedling', meaning: 'New Beginnings' },
-            { icon: '🌿', name: 'Herb', meaning: 'Natural' },
-            { icon: '🍀', name: 'Clover', meaning: 'Luck' },
-            { icon: '🍁', name: 'Maple', meaning: 'Change' },
-            { icon: '🍄', name: 'Mushroom', meaning: 'Trippy' },
-            { icon: '💐', name: 'Bouquet', meaning: 'Gratitude' },
-            { icon: '🌹', name: 'Rose', meaning: 'Romance' },
-            { icon: '🌻', name: 'Sunflower', meaning: 'Positivity' },
-            { icon: '🌺', name: 'Hibiscus', meaning: 'Tropical' },
-            { icon: '🌞', name: 'Sun Face', meaning: 'Radiant' },
-            { icon: '🌝', name: 'Moon Face', meaning: 'Watching' },
-            { icon: '🌜', name: 'Crescent', meaning: 'Dreaming' },
-            { icon: '🌍', name: 'Earth', meaning: 'Global' },
-            { icon: '🌋', name: 'Volcano', meaning: 'Erupting Energy' },
-            { icon: '🌈', name: 'Rainbow', meaning: 'Harmony' },
-            { icon: '⛈️', name: 'Storm', meaning: 'Mood' },
-            { icon: '❄️', name: 'Snow', meaning: 'Chill' },
-            { icon: '🔥', name: 'Fire', meaning: 'Passion' },
-            { icon: '💧', name: 'Drop', meaning: 'Purity' },
-            // --- SPIRITUAL & MYSTIC ---
-            { icon: '🙏', name: 'Pray', meaning: 'Blessed' },
-            { icon: '🧘', name: 'Lotus', meaning: 'Zen' },
-            { icon: '🔮', name: 'Crystal Ball', meaning: 'Future' },
-            { icon: '🧿', name: 'Nazar', meaning: 'Protection' },
-            { icon: '🕯️', name: 'Candle', meaning: 'Ritual' },
-            { icon: '⚗️', name: 'Alchemy', meaning: 'Magic' },
-            { icon: '🧬', name: 'DNA', meaning: 'Core Self' },
-            { icon: '👽', name: 'Alien', meaning: 'Otherworldly' },
-            { icon: '👻', name: 'Ghost', meaning: 'Vibing' },
-            { icon: '🦄', name: 'Unicorn', meaning: 'Rare Soul' },
-            { icon: '🦋', name: 'Butterfly', meaning: 'Transformation' },
-            { icon: '🕊️', name: 'Dove', meaning: 'Peace' },
-            { icon: '☯️', name: 'Yin Yang', meaning: 'Balance' },
-            { icon: '🕉️', name: 'Om', meaning: 'Universal Sound' },
-            { icon: '♾️', name: 'Infinity', meaning: 'Forever' },
-            { icon: '👁️', name: 'Eye', meaning: 'Awakened' },
-            // --- ART & LIFESTYLE ---
-            { icon: '🎨', name: 'Palette', meaning: 'Creative' },
-            { icon: '🎭', name: 'Masks', meaning: 'Drama' },
-            { icon: '🎬', name: 'Clapper', meaning: 'Action' },
-            { icon: '🎧', name: 'Headphones', meaning: 'In the Zone' },
-            { icon: '🎹', name: 'Piano', meaning: 'Melody' },
-            { icon: '🥁', name: 'Drum', meaning: 'Beat' },
-            { icon: '🎮', name: 'Controller', meaning: 'Play' },
-            { icon: '👾', name: 'Pixel', meaning: 'Retro' },
-            { icon: '🛹', name: 'Skate', meaning: 'Grind' },
-            { icon: '🏄', name: 'Surf', meaning: 'Riding' },
-            { icon: '🛀', name: 'Bath', meaning: 'Self Care' },
-            { icon: '🛌', name: 'Bed', meaning: 'Rest' },
-            { icon: '💌', name: 'Letter', meaning: 'Love Note' },
-            { icon: '🎁', name: 'Gift', meaning: 'Giving' },
-            { icon: '🎈', name: 'Balloon', meaning: 'Light' },
-            { icon: '🧸', name: 'Teddy', meaning: 'Comfort' },
-            { icon: '🧶', name: 'Yarn', meaning: 'Craft' },
-            { icon: '🧵', name: 'Thread', meaning: 'Mending' },
+            { 
+                icon: '/icons/emojis/investor_badge.png', 
+                name: 'The Lion', 
+                meaning: 'Supreme Leadership', 
+                isCustomImage: true 
+            },
+            { 
+                icon: '/icons/emojis/its_litt.png', 
+                name: 'Crown', 
+                meaning: 'The Boss', 
+                isCustomImage: true 
+            },
+            { 
+                icon: '/icons/emojis/jh4c.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            },
+             { 
+                icon: '/icons/emojis/kisses.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/let_go.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/liar.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/lol.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/looks_good.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/loser.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/not_today.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/noted.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/panhandler.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/period.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/picture_perfect.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/praying.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            },
+             { 
+                icon: '/icons/emojis/preach.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/quote_on_quote.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/rat.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/sad.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/salute.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/save_it.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/scammer.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/scammer1.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            },
+             { 
+                icon: '/icons/emojis/scary.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/show_time.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            },
+             { 
+                icon: '/icons/emojis/sick_of_you.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            },
+
+             { 
+                icon: '/icons/emojis/thumbs_down.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/toxic.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/trash.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/trolling.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/trolling1.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/wow.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/wth.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/yeah_sure.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            }, { 
+                icon: '/icons/emojis/ygktfo.png', 
+                name: 'Bag', 
+                meaning: 'Secured the bag', 
+                isCustomImage: true 
+            },
         ]
     }
 };

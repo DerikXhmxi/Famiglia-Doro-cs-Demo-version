@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Heart, MessageCircle, Share2, Trash2, Plus, Loader2, Play, Send, Upload, X } from 'lucide-react'
+import { Heart, MessageCircle, Share2, Trash2, Plus, Loader2, Play, Send, Upload, X, ThumbsUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -149,16 +149,16 @@ function ShortItem({ short, session, onDelete, onShare }: ShortItemProps) {
                     </div>
 
                     <div className="flex flex-col gap-4 items-center min-w-[50px]">
-                        <Button size="icon" variant="ghost" onClick={handleLike} className="text-white hover:bg-white/10 rounded-full h-12 w-12 flex flex-col gap-1"><Heart className={`w-7 h-7 ${isLiked ? 'fill-red-500 text-red-500' : 'text-white'}`}/><span className="text-[10px] font-medium">{likeCount}</span></Button>
+                        <Button size="icon" variant="ghost" onClick={handleLike} className="text-white hover:bg-white/10 rounded-full h-12 w-12 flex flex-col gap-1"><ThumbsUp className={`w-7 h-7 ${isLiked ? 'fill-blue-500 text-blue-500' : 'text-white'}`}/><span className="text-[10px] font-medium">{likeCount}</span></Button>
                         <Button size="icon" variant="ghost" onClick={() => { setIsCommentOpen(true); fetchComments(); }} className="text-white hover:bg-white/10 rounded-full h-12 w-12 flex flex-col gap-1"><MessageCircle className="w-7 h-7"/><span className="text-[10px] font-medium">Chat</span></Button>
                         <Button size="icon" variant="ghost" onClick={() => onShare({ type: 'short', data: short })} className="text-white hover:bg-white/10 rounded-full h-12 w-12 flex flex-col gap-1"><Share2 className="w-7 h-7"/><span className="text-[10px] font-medium">Share</span></Button>
                         {session.user.id === short.user_id && <Button size="icon" variant="ghost" className="text-red-400 hover:bg-red-500/20 rounded-full h-12 w-12 mt-2" onClick={() => onDelete(short.id)}><Trash2 className="w-6 h-6"/></Button>}
                     </div>
                 </div>
 
-                <div className="pointer-events-auto">
+                {/* <div className="pointer-events-auto">
                     <ReactionDock activePack={currentPack} onReact={handleReaction} variant="floating" />
-                </div>
+                </div> */}
             </div>
 
             {/* COMMENT SHEET */}

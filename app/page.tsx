@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
-import { Search, MessageSquare, Settings, LogOut, Home, Film, Users, Zap, Calendar, ShoppingBag, Grid, Tv, Phone, Video, Heart, Share2, MessageCircle, Play, Volume2, VolumeX, Trash2, HelpCircle, Briefcase, Gamepad2 } from "lucide-react"
+import { Search, MessageSquare, Settings, LogOut, Home, ThumbsUp, Film, Users, Zap, Calendar, ShoppingBag, Grid, Tv, Phone, Video, Heart, Share2, MessageCircle, Play, Volume2, VolumeX, Trash2, HelpCircle, Briefcase, Gamepad2 } from "lucide-react"
 import { useEmojiSystem } from '@/lib/useEmojiSystem' // <--- IMPORT THE HOOK
 // --- COMPONENT IMPORTS ---
 import AuthPage from '@/components/AuthPage'
@@ -129,8 +129,10 @@ function RealPostsFeed(
 
         return () => { clearInterval(interval); clearTimeout(timeout) }
     }, [deepLink])
-
-    const { currentPack } = useEmojiSystem(session?.user?.id)
+    const tierLevel = 5;
+    const isVip = tierLevel >= 5 // Define what tier counts as "VIP"
+const { currentPack, accessiblePacks } = useEmojiSystem(session?.user?.id, isVip)
+    // const { currentPack } = useEmojiSystem(session?.user?.id)
     useEffect(() => {
         fetchPosts()
         const channel = supabase.channel('posts_feed').on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => fetchPosts()).subscribe()
@@ -264,9 +266,9 @@ function RealPostsFeed(
                             {/* 1. LIKE BUTTON (Heart) */}
                             <button
                                 onClick={() => handleLike(post)}
-                                className={`flex items-center gap-2 text-sm font-medium transition-colors ${post.isLiked ? 'text-red-500' : 'text-zinc-500 hover:text-red-500'}`}
+                                className={`flex items-center gap-2 text-sm font-medium transition-colors ${post.isLiked ? 'text-blue-500' : 'text-zinc-500 hover:text-blue-500'}`}
                             >
-                                <Heart className={`h-5 w-5 ${post.isLiked ? 'fill-current' : ''}`} />
+                                <ThumbsUp className={`h-5 w-5 ${post.isLiked ? 'fill-current' : ''}`} />
                                 <span>{post.likeCount > 0 ? post.likeCount : t('likes')}</span>        </button>
 
                             {/* 2. REACTION DOCK (Smile) */}
@@ -506,18 +508,18 @@ export default function Page() {
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
 
                     <aside id="nav-sidebar" className="hidden lg:block lg:col-span-3">            <nav className="sticky top-24 space-y-1">
-                        <NavItem icon={<Home />} label={t('home')} active={activeTab === 'feed'} onClick={() => setActiveTab('feed')} />
+                        <NavItem activeImg='/icons/teasers.jpeg' inactiveImg='/icons/teasers.jpeg' icon={<Home />} label={t('home')} active={activeTab === 'feed'} onClick={() => setActiveTab('feed')} />
                         <NavItem icon={<MessageSquare />} label={t('messages')} active={activeTab === 'chat'} onClick={() => setActiveTab('chat')} />
-                        <NavItem icon={<Film />} label={t('shorts')} active={activeTab === 'shorts'} onClick={() => setActiveTab('shorts')} />
-                        <NavItem icon={<Users />} label={t('groups')} active={activeTab === 'groups'} onClick={() => setActiveTab('groups')} />
-                        <NavItem icon={<Zap />} label={t('live')} active={activeTab === 'live'} onClick={() => setActiveTab('live')} />
-                        <NavItem icon={<Calendar />} label={t('events')} active={activeTab === 'events'} onClick={() => setActiveTab('events')} />
-                        <NavItem icon={<ShoppingBag />} label={t('globalMall')} active={activeTab === 'mall'} onClick={() => setActiveTab('mall')} />
-                        <NavItem icon={<Grid />} label={t('suiteHub')} active={activeTab === 'suite'} onClick={() => setActiveTab('suite')} />
-                        <NavItem icon={<Tv />} label={t('tvNetwork')} active={activeTab === 'tv'} onClick={() => setActiveTab('tv')} />
+                        <NavItem activeImg='/icons/snippet.jpeg' inactiveImg='/icons/snippet.jpeg' icon={<Film />} label={t('shorts')} active={activeTab === 'shorts'} onClick={() => setActiveTab('shorts')} />
+                        <NavItem activeImg='/icons/group.png' inactiveImg='/icons/group.png' icon={<Users />} label={t('groups')} active={activeTab === 'groups'} onClick={() => setActiveTab('groups')} />
+                        <NavItem activeImg='/icons/video_icon.svg'inactiveImg='/icons/video_icon.svg' icon={<Zap />} label={t('live')} active={activeTab === 'live'} onClick={() => setActiveTab('live')} />
+                        <NavItem activeImg='/icons/event.png' inactiveImg='/icons/event.png' icon={<Calendar />} label={t('events')} active={activeTab === 'events'} onClick={() => setActiveTab('events')} />
+                        <NavItem activeImg='/icons/global_nav.png' inactiveImg='/icons/global_nav.png' icon={<ShoppingBag />} label={t('globalMall')} active={activeTab === 'mall'} onClick={() => setActiveTab('mall')} />
+                        <NavItem activeImg='/icons/menu_18.png' inactiveImg='/icons/menu_18.png' icon={<Grid />} label={t('suiteHub')} active={activeTab === 'suite'} onClick={() => setActiveTab('suite')} />
+                        <NavItem activeImg='/icons/logo_nav.png' inactiveImg='/icons/logo_nav.png'  icon={<Tv />} label={t('tvNetwork')} active={activeTab === 'tv'} onClick={() => setActiveTab('tv')} />
                         <div className="my-4 h-px bg-zinc-200/50 mx-4"></div>
-                        <NavItem icon={<Briefcase />} label={t('bizNetworx')} active={activeTab === 'biz'} onClick={() => setActiveTab('biz')} />
-                        <NavItem icon={<Gamepad2 />} label={t('kidzHQ')} active={activeTab === 'kidz'} onClick={() => setActiveTab('kidz')} />
+                        <NavItem activeImg='/icons/home1.jpeg' inactiveImg='/icons/home1.jpeg' icon={<Briefcase />} label={t('bizNetworx')} active={activeTab === 'biz'} onClick={() => setActiveTab('biz')} />
+                        <NavItem activeImg='/icons/home2.jpeg' inactiveImg='/icons/home2.jpeg' icon={<Gamepad2 />} label={t('kidzHQ')} active={activeTab === 'kidz'} onClick={() => setActiveTab('kidz')} />
                         <div className="pt-8">
                             <h3 className="px-4 text-xs font-semibold uppercase tracking-wider text-zinc-400">{t('settings')}</h3>
                             <div className="mt-2 space-y-1">
@@ -529,13 +531,12 @@ export default function Page() {
                     </aside>
 
                     <main className={activeTab === 'chat' ? "lg:col-span-9" : "lg:col-span-6 space-y-6"}>
-                        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                        <Tabs value={activeTab} onValueChange={setActiveTab} className=" w-full">
                             {activeTab !== 'chat' && (
-                                <TabsList id="app-tabs" className="w-full bg-white p-2 rounded-2xl shadow-sm border border-zinc-100 min-h-[3.5rem] h-auto flex flex-wrap items-center justify-center gap-2 mb-6">
+                                <TabsList id="app-tabs"
+                                    className="w-full bg-white p-2 rounded-2xl shadow-sm border border-zinc-100 h-auto grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-2 mb-6">                                    
                                     <TabsTrigger
-                                        value="feed"
-                                        className="group flex-1 min-w-[100px] flex-col items-center justify-center gap-2 data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all"
-                                    >
+                                        value="feed" className="group flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"                                    >
                                         <img
                                             src="/icons/teasers.jpeg"
                                             alt="Home"
@@ -543,51 +544,68 @@ export default function Page() {
                                         />
                                         {t('home')}
                                     </TabsTrigger>
-                                    <TabsTrigger value="shorts" className="flex-1 flex-col   min-w-[80px] data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all"> <img
+                                    <TabsTrigger value="shorts" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/snippet.jpeg"
                                         alt="Home"
                                         className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
                                     /> {t('shorts')}</TabsTrigger>
-                                    <TabsTrigger value="groups" className="flex-1 flex-col  min-w-[100px] data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all"> <img
+                                    <TabsTrigger value="groups" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/group.png"
                                         alt="Home"
                                         className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
                                     /> {t('groups')}</TabsTrigger>
-                                    <TabsTrigger value="live" className="flex-1 flex-col min-w-[80px] data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all"> <img
+                                    <TabsTrigger value="live" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/video_icon.svg"
                                         alt="Home"
                                         className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
                                     /> {t('live')}</TabsTrigger>
-                                    <TabsTrigger value="events" className="flex-1 flex-col min-w-[80px] data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all"> <img
+                                    <TabsTrigger value="events" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/event.png"
                                         alt="Home"
                                         className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
                                     /> {t('events')}</TabsTrigger>
-                                    <TabsTrigger value="mall" className="flex-1 flex-col min-w-[100px] data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all"> <img
+                                    <TabsTrigger value="crm" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
+                                        src="/icons/crm.jpeg"
+                                        alt="CRM"
+                                        className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
+                                    /> {t('CRM')}</TabsTrigger>
+                                    <TabsTrigger value="mall" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/global_nav.png"
                                         alt="Home"
                                         className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
                                     /> {t('globalMall')}</TabsTrigger>
-                                    <TabsTrigger value="suite" className="flex-1 flex-col min-w-[100px] data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all"> <img
+                                    <TabsTrigger value="suite" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/menu_18.png"
                                         alt="Home"
                                         className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
                                     /> {t('suiteHub')}</TabsTrigger>
-                                    <TabsTrigger value="tv" className="flex-1 flex-col min-w-[80px] data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all"> <img
+                                    <TabsTrigger value="tv" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/logo_nav.png"
                                         alt="Home"
                                         className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
                                     /> {t('tvNetwork')}</TabsTrigger>
-                                    <TabsTrigger value="biz" className="flex-1 flex-col min-w-[80px] data-[state=active]:bg-yellow-400 data-[state=active]:text-black"> <img
+                                    <TabsTrigger value="biz" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/home1.jpeg"
                                         alt="Home"
                                         className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
                                     /> {t('bizNetworx')}</TabsTrigger>
-                                    <TabsTrigger value="kidz" className="flex-1 flex-col min-w-[80px] data-[state=active]:bg-yellow-400 data-[state=active]:text-black"> <img
+                                    <TabsTrigger value="kidz" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/home2.jpeg"
                                         alt="Home"
                                         className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
                                     /> {t('kidzHQ')}</TabsTrigger>
+
+
+                                    <TabsTrigger value="Promotion" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
+                                        src="/icons/promotion.jpeg"
+                                        alt="Promotion"
+                                        className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
+                                    /> {t('Promotion')}</TabsTrigger>
+                                    <TabsTrigger value="Train-Station" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
+                                        src="/icons/Train.jpeg"
+                                        alt="Train-Station"
+                                        className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
+                                    /> {t('Train Station')}</TabsTrigger>
                                 </TabsList>
                             )}
 
@@ -649,6 +667,30 @@ export default function Page() {
                                     description="A safe, fun, and interactive space for the younger generation. Games, educational content, and family-friendly entertainment."
                                 />
                             </TabsContent>
+
+                            <TabsContent value="crm">
+                                <ComingSoon
+                                    title={t('CRM')}
+                                    icon={Gamepad2}
+                                    description="CRM"
+                                />
+                            </TabsContent>
+
+                            <TabsContent value="Promotion">
+
+                                <ComingSoon
+                                    title={t('Promotion')}
+                                    icon={Gamepad2}
+                                    description="Promotion"
+                                />
+                            </TabsContent>
+                             <TabsContent value="Train-Station">
+                                <ComingSoon
+                                    title={t('Train Station')}
+                                    icon={Gamepad2}
+                                    description="Train Station"
+                                />
+                            </TabsContent>
                         </Tabs>
                     </main>
 
@@ -656,10 +698,10 @@ export default function Page() {
                         <aside id="right-sidebar" className="hidden lg:block lg:col-span-3 space-y-6">              <IncomingRequests session={session} />
                             <SidebarChatWidget session={session} onChat={openPrivateChat} />
                             <SuggestedFriends session={session} onViewProfile={handleViewProfile} />
-                            <div className="rounded-3xl bg-white p-6 shadow-sm border border-zinc-100">
-                                <h3 className="font-bold text-zinc-900 mb-4">{t('widget_trending')}</h3>
-                                <div className="space-y-3">{['#FamigliaDoro', '#GoldStandard', '#CreatorEconomy'].map((tag) => (<div key={tag} className="flex justify-between items-center group cursor-pointer"><span className="text-sm text-zinc-600 group-hover:text-yellow-600 transition-colors">{tag}</span><span className="text-xs text-zinc-400">2.5k posts</span></div>))}</div>
-                            </div>
+                            {/* <div className="rounded-3xl bg-white p-6 shadow-sm border border-zinc-100"> */}
+                                {/* <h3 className="font-bold text-zinc-900 mb-4">{t('widget_trending')}</h3> */}
+                                {/* <div className="space-y-3">{['#FamigliaDoro', '#GoldStandard', '#CreatorEconomy'].map((tag) => (<div key={tag} className="flex justify-between items-center group cursor-pointer"><span className="text-sm text-zinc-600 group-hover:text-yellow-600 transition-colors">{tag}</span><span className="text-xs text-zinc-400">2.5k posts</span></div>))}</div> */}
+                            {/* </div> */}
                         </aside>
                     )}
                 </div>
@@ -693,7 +735,7 @@ function NavItem({ icon, activeImg, inactiveImg, label, active = false, onClick 
     activeImg?: string,
     inactiveImg?: string, label: string, active?: boolean, onClick: () => void
 }) {
-    return <button onClick={onClick} className={`flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-medium transition-all duration-200 ${active ? 'bg-zinc-900 text-yellow-400 shadow-lg shadow-zinc-300' : 'text-zinc-600 hover:bg-white hover:text-yellow-600 hover:shadow-sm'}`}>
+    return <button onClick={onClick} className={`flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-medium transition-all duration-200 ${active ? 'bg-zinc-900 text-yellow-400 shadow-lg shadow-zinc-300' : ' hover:bg-white hover:text-yellow-600 hover:shadow-sm'}`}>
         <div className={`h-6 w-6 flex items-center justify-center shrink-0 ${active ? 'text-yellow-400' : 'text-zinc-400'}`}>
             {/* LOGIC: If active & has activeImg -> show Image. Else if inactive & has inactiveImg -> show Image. Else -> show Icon */}
             {active && activeImg ? (

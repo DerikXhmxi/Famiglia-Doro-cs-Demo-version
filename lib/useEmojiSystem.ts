@@ -2,99 +2,97 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { EMOJI_PACKS, EmojiPack } from '@/lib/emojiPacks'
+// Make sure this path matches where you saved the EMOJI_PACKS data from Step 1
+import { EMOJI_PACKS, EmojiPack } from '@/lib/emojiPacks' 
 
-export function useEmojiSystem(userId?: string) {
-    const [activePackId, setActivePackId] = useState('classic')
-    const [allPacks, setAllPacks] = useState<Record<string, EmojiPack>>(EMOJI_PACKS)
+export function useEmojiSystem(userId: string | null, isVip: boolean) {
+    const [activePackId, setActivePackId] = useState<string>('defaults')
     const [loading, setLoading] = useState(true)
 
-    // Function to re-fetch everything (used on initial load and realtime updates)
-    const refreshData = async () => {
-        if (!userId) return
+    // 1. FILTER PACKS BASED ON VIP STATUS
+    // Convert the Record object to an Array for easier filtering
+    const allPacksArray = Object.values(EMOJI_PACKS)
 
-        try {
-            // 1. Fetch User Preference
-            const { data: settings } = await supabase
-                .from('user_settings')
-                .select('active_emoji_pack')
-                .eq('user_id', userId)
-                .single()
+    const accessiblePacks = allPacksArray.filter(pack => {
+        if (pack.level === 1) return true; // Level 1 is always free
+        if (pack.level === 2 && isVip) return true; // Level 2 requires VIP
+        return false;
+    })
 
-            if (settings?.active_emoji_pack) {
-                // console.log("Updated Active Pack:", settings.active_emoji_pack) 
-                setActivePackId(settings.active_emoji_pack)
-            }
+    const lockedPacks = allPacksArray.filter(pack => {
+        return pack.level === 2 && !isVip;
+    })
 
-            // 2. Fetch Custom Packs
-            const { data: customPacks } = await supabase
-                .from('custom_emoji_packs')
-                .select('*')
-                .eq('user_id', userId)
-
-            // 3. Merge
-            const mergedPacks = { ...EMOJI_PACKS }
-            if (customPacks) {
-                customPacks.forEach((pack: any) => {
-                    mergedPacks[pack.id] = {
-                        id: pack.id,
-                        name: pack.name,
-                        description: pack.description || 'Custom Pack',
-                        emojis: pack.emojis
-                    }
-                })
-            }
-            setAllPacks(mergedPacks)
-        } catch (error) {
-            console.error("Error fetching emoji data:", error)
-        } finally {
-            setLoading(false)
-        }
-    }
-
+    // 2. FETCH & SYNC ACTIVE PACK FROM DB
+    // We still want to remember which pack the user selected last time
     useEffect(() => {
-        if (!userId) return
+        if (!userId) {
+            setLoading(false)
+            return
+        }
 
-        // Initial Fetch
-        refreshData()
+        const fetchSettings = async () => {
+            try {
+                const { data } = await supabase
+                    .from('user_settings')
+                    .select('active_emoji_pack')
+                    .eq('user_id', userId)
+                    .single()
 
-        // --- REALTIME SUBSCRIPTION ---
-        // This listens for changes in the DB and updates the UI instantly
-        const channel = supabase.channel('emoji_realtime')
+                if (data?.active_emoji_pack) {
+                    // Check if the user is allowed to use this saved pack (e.g. if they lost VIP)
+                    const pack = EMOJI_PACKS[data.active_emoji_pack]
+                    if (pack && (pack.level === 1 || (pack.level === 2 && isVip))) {
+                        setActivePackId(data.active_emoji_pack)
+                    } else {
+                        // Fallback to default if saved pack is locked/invalid
+                        setActivePackId('defaults') 
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching emoji settings:", error)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchSettings()
+
+        // Realtime listener for setting changes
+        const channel = supabase.channel('emoji_settings_realtime')
             .on(
                 'postgres_changes',
                 { 
-                    event: '*', // Listen to INSERT, UPDATE, DELETE
+                    event: 'UPDATE', 
                     schema: 'public', 
                     table: 'user_settings',
                     filter: `user_id=eq.${userId}` 
                 }, 
                 (payload) => {
-                    // console.log("Realtime Change Detected:", payload)
-                    if (payload.new && 'active_emoji_pack' in payload.new) {
-                        setActivePackId((payload.new as any).active_emoji_pack)
+                    if (payload.new && payload.new.active_emoji_pack) {
+                        const newPackId = payload.new.active_emoji_pack
+                        // Validate access again in realtime
+                        const pack = EMOJI_PACKS[newPackId]
+                        if (pack && (pack.level === 1 || (pack.level === 2 && isVip))) {
+                            setActivePackId(newPackId)
+                        }
                     }
-                }
-            )
-            .on(
-                'postgres_changes',
-                { 
-                    event: '*', 
-                    schema: 'public', 
-                    table: 'custom_emoji_packs',
-                    filter: `user_id=eq.${userId}` 
-                }, 
-                () => {
-                    // If user creates a new pack, re-fetch the list
-                    refreshData()
                 }
             )
             .subscribe()
 
         return () => { supabase.removeChannel(channel) }
-    }, [userId])
+    }, [userId, isVip])
 
-    const currentPack = allPacks[activePackId] || allPacks['classic']
+    // 3. DETERMINE CURRENT ACTIVE PACK
+    // If the activePackId isn't in accessible packs (edge case), fallback to the first accessible one
+    const currentPack = accessiblePacks.find(p => p.id === activePackId) || accessiblePacks[0] || EMOJI_PACKS['defaults']
 
-    return { activePackId, allPacks, currentPack, loading }
+    return { 
+        activePackId, 
+        accessiblePacks, 
+        lockedPacks, 
+        currentPack, 
+        loading 
+    }
 }
