@@ -20,7 +20,7 @@ const PLANS = [
         ],
         color: "bg-zinc-900 text-white",
         tierId: "free_trial",
-        badgeImg: null 
+        badgeImg: '/badges/free.png' 
     },
     {
         name: "Verified Mid Student",
@@ -33,7 +33,7 @@ const PLANS = [
         ],
         color: "bg-orange-400 text-white",
         tierId: "mid_student",
-        badgeImg: "/badges/mid_student.jpg" 
+        badgeImg: "/badges/badge1.png" 
     },
     {
         name: "Verified HS Student",
@@ -46,7 +46,7 @@ const PLANS = [
         ],
         color: "bg-zinc-300 text-zinc-900",
         tierId: "hs_student",
-        badgeImg: "/badges/hs_student.jpg"
+        badgeImg: "/badges/badge2.png"
     },
     {
         name: "Verified College Student",
@@ -61,7 +61,7 @@ const PLANS = [
         ],
         color: "bg-yellow-400 text-black",
         tierId: "college_student",
-        badgeImg: "/badges/college_student.jpg"
+        badgeImg: "/badges/badge3.png"
     },
     {
         name: "Verified User",
@@ -76,31 +76,54 @@ const PLANS = [
         ],
         color: "bg-zinc-800 text-white border border-yellow-500/50",
         tierId: "verified_user",
-        badgeImg: "/badges/verified_user.jpg"
+        badgeImg: "/badges/badge4.png"
     },
     {
-        name: "Verified Live",
+        name: "Verified Seller",
         price: "5.99",
         duration: "/mo",
         features: [
-            "All Verified User Features",
-            "Go Live Feature"
+ "Global Mall Seller", 
+            "Business Page Creation", 
+            "Create Private Group", 
+            "Freedom of Emoji (Level 2)", 
+            "Some SuiteHub Access",
+                        "Go Live Feature"
         ],
         color: "bg-red-600 text-white",
         tierId: "verified_live",
-        badgeImg: "/badges/verified_live.jpg" 
+        badgeImg: "/badges/badge5.png"
+    },
+        {
+        name: "Verified Educator",
+        price: "9.99",
+        duration: "/mo",
+        features: [
+ "Global Mall Seller", 
+            "Business Page Creation", 
+           "Freedom of Emoji", 
+            "Some SuiteHub Access",
+        ],
+        color: "bg-red-600 text-white",
+        tierId: "verified_live",
+        badgeImg: "/badges/badge8.png"
     },
     {
-        name: "Content Creator",
+        name: "Community Partner",
         price: "8.99",
         duration: "/mo",
         features: [
-            "All Verified Live Features",
-            "Content Upload"
+"Global Mall Seller", 
+            "Business Page Creation", 
+            "Create Private Group", 
+            "Freedom of Emoji (Level 2)", 
+            "Some SuiteHub Access",
+                        "Go Live Feature",
+                                    "Content Upload"
         ],
         color: "bg-purple-600 text-white",
         tierId: "content_creator",
-        badgeImg: "/badges/content_creator.jpg"
+        badgeImg: "/badges/badge6.png"
     },
     {
         name: "Verified Artist",
@@ -108,13 +131,17 @@ const PLANS = [
         duration: "/mo",
         features: [
             "Content Upload",
+            "Create Private Group", 
             "Global Mall Seller",
             "Business Page Creation",
-            "NO Live Feature" 
+            "Freedom of Emoji", 
+            "Freedom of Emoji (Level 2)", 
+            "Some SuitHub Feature"
+
         ],
         color: "bg-pink-500 text-white",
         tierId: "verified_artist",
-        badgeImg: "/badges/verified_artist.jpg"
+        badgeImg: "/badges/badge7.png"
     },
     {
         name: "Content Upload Badge",
@@ -130,7 +157,7 @@ const PLANS = [
         ],
         color: "bg-indigo-600 text-white",
         tierId: "content_upload_badge",
-        badgeImg: "/badges/content_upload.jpg"
+        badgeImg: "/badges/badge6.png"
     },
     {
         name: "Business Startup",
@@ -142,47 +169,81 @@ const PLANS = [
         ],
         color: "bg-blue-800 text-white",
         tierId: "business_startup",
-        badgeImg: "/badges/business_startup.jpg"
+        badgeImg: "/badges/badge9.png"
     },
-    {
-        name: "SuiteHub Access",
+        {
+        name: "Business Plus",
         price: "39.99",
         duration: "/mo",
         features: [
-            "All Features",
-            "All SuiteHub Access",
-            "Go Live & Content Upload"
+             "Content Upload",
+            "Global Mall Seler",
+            "Business Page Creation",
+            "Create Private Group Access",
+            "Freedom of emoji speech"           ,
+            "Freedom of emoji speech level 2",
+            "All Access to Suite Hub (+) Grandfathered in",
+            "Go Live"
         ],
         color: "bg-emerald-600 text-white",
         tierId: "suitehub_access",
-        badgeImg: "/badges/suitehub.jpg"
+        badgeImg: "/badges/badge11.png"
     },
     {
-        name: "All Access (No Live)",
+        name: "Business LifeTime",
+        price: "39.99",
+        duration: "/mo",
+        features: [
+             "Content Upload",
+            "Global Mall Seler",
+            "Business Page Creation",
+            "Create Private Group Access",
+            "Freedom of emoji speech"           ,
+            "Freedom of emoji speech level 2",
+            "All Access to Suite Hub (+) Grandfathered in",
+            "Go Live"
+        ],
+        color: "bg-emerald-600 text-white",
+        tierId: "suitehub_access",
+        badgeImg: "/badges/badge11.png"
+    },
+    {
+        name: "Monetize ",
         price: "49.99",
         duration: "/mo",
         features: [
-            "All Features",
-            "All SuiteHub Access",
-            "Content Upload",
-            "NO Live Feature"
+           "Content Upload",
+            "Global Mall Seler",
+            "Business Page Creation",
+            "Create Private Group Access",
+            "Freedom of emoji speech"
+            ,
+            "Freedom of emoji speech level 2",
+            "All Access of Suit Hub +Go Live"
+ 
         ],
         color: "bg-gray-800 text-white",
         tierId: "all_no_live",
-        badgeImg: "/badges/all_no_live.jpg"
+        badgeImg: "/badges/badge12.png"
     },
     {
-        name: "Ultimate Access (No SuiteHub)",
+        name: "Investor",
         price: "99.99",
         duration: "/mo",
         features: [
-            "All Access",
-            "Go Live & Content Upload",
-            "NO SuiteHub Access"
+            "Content Upload",
+            "Global Mall Seler",
+            "Business Page Creation",
+            "Create Private Group Access",
+            "Freedom of emoji speech"
+            ,
+            "Freedom of emoji speech level 2",
+            "Go Live"
+
         ],
         color: "bg-black text-yellow-400 border border-yellow-400",
         tierId: "ultimate_no_suite",
-        badgeImg: "/badges/ultimate.jpg"
+        badgeImg: "/badges/badge14.png"
     }
 ]
 
