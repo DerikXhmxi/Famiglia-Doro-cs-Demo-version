@@ -51,7 +51,7 @@ export function EmojiProvider({ children }: { children: React.ReactNode }) {
         }
     }
 
-    // 4. Action: Refresh Custom Packs (Call this after creating a new pack)
+    // 4. Action: Refresh Custom Packs
     const refreshCustomPacks = async () => {
         if (userId) {
             const { data } = await supabase.from('custom_emoji_packs').select('*').eq('user_id', userId)
@@ -61,13 +61,14 @@ export function EmojiProvider({ children }: { children: React.ReactNode }) {
 
     // 5. Merge Data
     const allPacks: Record<string, EmojiPack> = { ...EMOJI_PACKS }
+    
     customPacks.forEach(p => {
         allPacks[p.id] = {
             id: p.id,
             name: p.name,
             description: p.description || 'Custom Pack',
             emojis: p.emojis,
-            // : false // Or true if your logic supports it
+            level: 1 // <--- FIX: Added default level (1 = Free) to satisfy the type definition
         }
     })
 
