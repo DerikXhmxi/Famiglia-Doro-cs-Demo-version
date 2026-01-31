@@ -577,10 +577,10 @@ const [isMobileWidgetsOpen, setIsMobileWidgetsOpen] = useState(false) // NEW
         <NavItem activeImg='/icons/logo_nav.png' inactiveImg='/icons/logo_nav.png' icon={<Tv />} label={t('tvNetwork')} active={activeTab === 'tv'} onClick={() => setActiveTab('tv')} />
         
         {/* Expanded Items */}
-        <NavItem activeImg='/icons/crm.jpeg' inactiveImg='/icons/crm.jpeg' icon={<Briefcase />} label={t('CRM')} active={activeTab === 'crm'} onClick={() => setActiveTab('crm')} />
-        <NavItem activeImg='/icons/promotion.png' inactiveImg='/icons/promotion.png' icon={<Briefcase />} label={t('Promotion')} active={activeTab === 'Promotion'} onClick={() => setActiveTab('Promotion')} />
-        <NavItem activeImg='/icons/train.png' inactiveImg='/icons/train.png' icon={<Briefcase />} label={t('Train Station')} active={activeTab === 'Train-Station'} onClick={() => setActiveTab('Train-Station')} />
-        <NavItem activeImg='/icons/suit.png' inactiveImg='/icons/suit.png' icon={<Briefcase />} label={t('Challenge Suite')} active={activeTab === 'Challenge-Suit'} onClick={() => setActiveTab('Challenge-Suit')} />
+        <NavItem activeImg='/icons/crm.jpg' inactiveImg='/icons/crm.jpg' icon={<Briefcase />} label={t('CRM')} active={activeTab === 'crm'} onClick={() => setActiveTab('crm')} />
+        <NavItem activeImg='/icons/promotion.jpg' inactiveImg='/icons/promotion.jpg' icon={<Briefcase />} label={t('Promotion')} active={activeTab === 'Promotion'} onClick={() => setActiveTab('Promotion')} />
+        <NavItem activeImg='/icons/train.jpg' inactiveImg='/icons/train.jpg' icon={<Briefcase />} label={t('Train Station')} active={activeTab === 'Train-Station'} onClick={() => setActiveTab('Train-Station')} />
+        <NavItem activeImg='/icons/suit.jpg' inactiveImg='/icons/suit.jpg' icon={<Briefcase />} label={t('Challenge Suite')} active={activeTab === 'Challenge-Suit'} onClick={() => setActiveTab('Challenge-Suit')} />
 
         <div className="my-4 h-px bg-zinc-200/50 mx-4"></div>
         
@@ -606,29 +606,29 @@ const [isMobileWidgetsOpen, setIsMobileWidgetsOpen] = useState(false) // NEW
                                         <img
                                             src="/icons/teasers.jpeg"
                                             alt="Home"
-                                            className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
+                                            className="w-11 h-11 object-contain" // <--- FIX APPLIED HERE
                                         />
                                         {t('home')}
                                     </TabsTrigger>
                                     <TabsTrigger value="shorts" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/snippet.jpeg"
                                         alt="Home"
-                                        className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
+                                        className="w-11 h-11 object-contain" // <--- FIX APPLIED HERE
                                     /> {t('shorts')}</TabsTrigger>
                                     <TabsTrigger value="groups" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/group.png"
                                         alt="Home"
-                                        className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
+                                        className="w-11 h-11 object-contain" // <--- FIX APPLIED HERE
                                     /> {t('groups')}</TabsTrigger>
                                     <TabsTrigger value="live" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/video_icon.svg"
                                         alt="Home"
-                                        className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
+                                        className="w-11 h-11 object-contain" // <--- FIX APPLIED HERE
                                     /> {t('live')}</TabsTrigger>
                                     <TabsTrigger value="events" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/event.png"
                                         alt="Home"
-                                        className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
+                                        className="w-11 h-11 object-contain" // <--- FIX APPLIED HERE
                                     /> {t('events')}</TabsTrigger>
                                     {/* <TabsTrigger value="crm" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/crm.jpeg"
@@ -638,34 +638,34 @@ const [isMobileWidgetsOpen, setIsMobileWidgetsOpen] = useState(false) // NEW
                                     <TabsTrigger value="mall" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/global_nav.png"
                                         alt="Home"
-                                        className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
+                                        className="w-11 h-11 object-contain" // <--- FIX APPLIED HERE
                                     /> {t('globalMall')}</TabsTrigger>
                                     <TabsTrigger value="suite" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/menu_18.png"
                                         alt="Home"
-                                        className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
+                                        className="w-11 h-11 object-contain" // <--- FIX APPLIED HERE
                                     /> {t('suiteHub')}</TabsTrigger>
                                     <TabsTrigger value="tv" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/logo_nav.png"
                                         alt="Home"
-                                        className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
+                                        className="w-11 h-11 object-contain" // <--- FIX APPLIED HERE
                                     /> {t('tvNetwork')}</TabsTrigger>
                                     <TabsTrigger value="biz" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/home1.jpeg"
                                         alt="Home"
-                                        className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
+                                        className="w-11 h-11 object-contain" // <--- FIX APPLIED HERE
                                     /> {t('bizNetworx')}</TabsTrigger>
                                     <TabsTrigger value="kidz" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/home2.jpeg"
                                         alt="Home"
-                                        className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
+                                        className="w-11 h-11 object-contain" // <--- FIX APPLIED HERE
                                     /> {t('kidzHQ')}</TabsTrigger>
 
 
                                      <TabsTrigger value="Challenge-Suit" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
-                                        src="/icons/suit.jpeg"
+                                        src="/icons/suit.jpg"
                                         alt="Challenge Suit Logo"
-                                        className="w-10 h-10 object-contain" // <--- FIX APPLIED HERE
+                                        className="w-14 h-14 object-contain" // <--- FIX APPLIED HERE
                                     /> {t('Challenge Suite')}</TabsTrigger>
                              {/*       <TabsTrigger value="Train-Station" className="flex flex-col items-center justify-center gap-2 w-full p-2 h-full data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:font-bold transition-all rounded-xl"> <img
                                         src="/icons/Train.jpeg"
