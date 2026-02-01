@@ -573,14 +573,14 @@ const [isMobileWidgetsOpen, setIsMobileWidgetsOpen] = useState(false) // NEW
         <NavItem activeImg='/icons/video_icon.svg' inactiveImg='/icons/video_icon.svg' icon={<Zap />} label={t('live')} active={activeTab === 'live'} onClick={() => setActiveTab('live')} />
         <NavItem activeImg='/icons/event.png' inactiveImg='/icons/event.png' icon={<Calendar />} label={t('events')} active={activeTab === 'events'} onClick={() => setActiveTab('events')} />
         <NavItem activeImg='/icons/global_nav.png' inactiveImg='/icons/global_nav.png' icon={<ShoppingBag />} label={t('globalMall')} active={activeTab === 'mall'} onClick={() => setActiveTab('mall')} />
-        <NavItem activeImg='/icons/suit.jpg' inactiveImg='/icons/suit.jpg' icon={<Grid />} label={t('suiteHub')} active={activeTab === 'suite'} onClick={() => setActiveTab('suite')} />
+        <NavItem activeImg='/icons/suit.jpeg' inactiveImg='/icons/suit.jpeg' icon={<Grid />} label={t('suiteHub')} active={activeTab === 'suite'} onClick={() => setActiveTab('suite')} />
         <NavItem activeImg='/icons/logo_nav.png' inactiveImg='/icons/logo_nav.png' icon={<Tv />} label={t('tvNetwork')} active={activeTab === 'tv'} onClick={() => setActiveTab('tv')} />
         
         {/* Expanded Items */}
-        <NavItem activeImg='/icons/crm.jpg' inactiveImg='/icons/crm.jpg' icon={<Briefcase />} label={t('CRM')} active={activeTab === 'crm'} onClick={() => setActiveTab('crm')} />
-        <NavItem activeImg='/icons/promotion.jpg' inactiveImg='/icons/promotion.jpg' icon={<Briefcase />} label={t('Promotion')} active={activeTab === 'Promotion'} onClick={() => setActiveTab('Promotion')} />
+        <NavItem activeImg='/icons/crm_black.jpeg' inactiveImg='/icons/crm_black.jpeg' icon={<Briefcase />} label={t('CRM')} active={activeTab === 'crm'} onClick={() => setActiveTab('crm')} />
+        <NavItem activeImg='/icons/promotion_black.jpeg' inactiveImg='/icons/promotion_black.jpeg' icon={<Briefcase />} label={t('Promotion')} active={activeTab === 'Promotion'} onClick={() => setActiveTab('Promotion')} />
         <NavItem activeImg='' inactiveImg='' icon={<Gamepad2 />} label={t('Train Station')} active={activeTab === 'Train-Station'} onClick={() => setActiveTab('Train-Station')} />
-        <NavItem activeImg='/icons/challenge_suit.jpg' inactiveImg='/icons/suit.jpg' icon={<Briefcase />} label={t('Challenge Suite')} active={activeTab === 'Challenge-Suit'} onClick={() => setActiveTab('Challenge-Suit')} />
+        <NavItem activeImg='/icons/challenge_black.jpeg' inactiveImg='/icons/challenge_black.jpeg' icon={<Briefcase />} label={t('Challenge Suite')} active={activeTab === 'Challenge-Suit'} onClick={() => setActiveTab('Challenge-Suit')} />
 
         <div className="my-4 h-px bg-zinc-200/50 mx-4"></div>
         
